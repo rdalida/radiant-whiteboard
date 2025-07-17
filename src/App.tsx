@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
+import ShapeElement from './ShapeElement';
 interface WhiteboardImage {
   id: string;
   x: number;
@@ -762,45 +763,38 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         ))}
         {/* Render shapes first so they are always behind text */}
         {shapes.map((shape) => (
-          <div
+          <ShapeElement
             key={shape.id}
-            className={`absolute group cursor-pointer ${selectedShapes.includes(shape.id) ? 'ring-2 ring-blue-400 z-20' : ''} hover:ring-2 hover:ring-gray-400`}
-            style={{ 
-              left: shape.x, 
-              top: shape.y,
-              width: shape.width,
-              height: shape.height
-            }}
-            onClick={(e) => {
+            shape={shape}
+            selected={selectedShapes.includes(shape.id)}
+            onClick={(e, id) => {
               e.stopPropagation();
               const isMultiSelect = e.ctrlKey || e.metaKey;
               if (isMultiSelect) {
-                if (selectedShapes.includes(shape.id)) {
-                  setSelectedShapes(selectedShapes.filter(id => id !== shape.id));
+                if (selectedShapes.includes(id)) {
+                  setSelectedShapes(selectedShapes.filter(sid => sid !== id));
                 } else {
-                  setSelectedShapes([...selectedShapes, shape.id]);
+                  setSelectedShapes([...selectedShapes, id]);
                 }
               } else {
-                // If already selected, deselect all
-                if (selectedShapes.length === 1 && selectedShapes[0] === shape.id) {
+                if (selectedShapes.length === 1 && selectedShapes[0] === id) {
                   setSelectedShapes([]);
                   setSelectedBoxes([]);
                 } else {
-                  setSelectedShapes([shape.id]);
+                  setSelectedShapes([id]);
                   setSelectedBoxes([]);
                 }
               }
             }}
-            onMouseDown={(e) => {
-              if (e.button !== 0) return; // Only left mouse
-              // Prevent drag if resizing or panning
+            onMouseDown={(e, id) => {
+              if (e.button !== 0) return;
               if (isPanning || resizingShape || resizingBox) return;
               e.stopPropagation();
               const rect = whiteboardRef.current?.getBoundingClientRect();
               if (!rect) return;
               const mouseX = (e.clientX - rect.left - pan.x) / zoom;
               const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-              setDraggingShape(shape.id);
+              setDraggingShape(id);
               setDragShapeStart({
                 x: mouseX,
                 y: mouseY,
@@ -808,65 +802,16 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
                 offsetY: mouseY - shape.y
               });
             }}
-          >
-            <div className="relative w-full h-full">
-              {shape.isEditing ? (
-                <input
-                  type="text"
-                  value={shape.text}
-                  onChange={e => setShapes(shapes.map(s => s.id === shape.id ? { ...s, text: e.target.value } : s))}
-                  onBlur={() => setShapes(shapes.map(s => s.id === shape.id ? { ...s, isEditing: false } : s))}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') setShapes(shapes.map(s => s.id === shape.id ? { ...s, isEditing: false } : s));
-                  }}
-                  className={`absolute w-full h-full rounded-lg px-2 py-1 font-bold bg-white/80 border-2 border-dashed border-gray-400 focus:outline-none focus:border-blue-500 resize-none`}
-                  style={{ fontSize: `${Math.max(12, Math.min(72, shape.height * 0.25))}px`, textAlign: 'center' }}
-                  autoFocus
-                />
-              ) : (
-                <div
-                  className={`absolute w-full h-full flex items-center justify-center select-none px-2 py-1 font-bold text-gray-700 ${shape.type === 'rectangle' ? 'rounded-lg' : ''} ${shape.type === 'circle' ? 'rounded-full' : ''} ${shape.type === 'diamond' ? 'transform rotate-45' : ''} ${shape.gradient}`}
-                  style={{ fontSize: `${Math.max(12, Math.min(72, shape.height * 0.25))}px`, textAlign: 'center', overflow: 'hidden', wordBreak: 'break-word' }}
-                  onDoubleClick={() => setShapes(shapes.map(s => s.id === shape.id ? { ...s, isEditing: true } : s))}
-                >
-                  {shape.text}
-                </div>
-              )}
-              {/* Shape Controls */}
-              <div className="absolute -top-8 right-0 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const randomGradient = getRandomGradient();
-                    setShapes(shapes.map(s => 
-                      s.id === shape.id ? { ...s, gradient: randomGradient.value } : s
-                    ));
-                  }}
-                  className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                  title="Change gradient"
-                >
-                  🎨
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShapes(shapes.filter(s => s.id !== shape.id));
-                  }}
-                  className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                  title="Delete"
-                >
-                  ×
-                </button>
-              </div>
-              
-              {/* Resize handle */}
-              <div
-                className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white shadow-lg"
-                onMouseDown={(e) => handleShapeResizeStart(e, shape.id)}
-                title="Drag to resize"
-              />
-            </div>
-          </div>
+            onTextChange={(id, newText) => setShapes(shapes.map(s => s.id === id ? { ...s, text: newText } : s))}
+            onTextBlur={id => setShapes(shapes.map(s => s.id === id ? { ...s, isEditing: false } : s))}
+            onTextDoubleClick={id => setShapes(shapes.map(s => s.id === id ? { ...s, isEditing: true } : s))}
+            onDelete={id => setShapes(shapes.filter(s => s.id !== id))}
+            onChangeGradient={id => {
+              const randomGradient = getRandomGradient();
+              setShapes(shapes.map(s => s.id === id ? { ...s, gradient: randomGradient.value } : s));
+            }}
+            onResizeStart={(e, id) => handleShapeResizeStart(e, id)}
+          />
         ))}
         {textBoxes.map((box) => (
           <TextBox
