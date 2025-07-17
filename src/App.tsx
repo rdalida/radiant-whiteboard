@@ -4,6 +4,7 @@ import { handleWhiteboardMouseDown } from './hooks/handleWhiteboardMouseDown';
 import { handleWhiteboardMouseMove } from './hooks/handleWhiteboardMouseMove';
 import { handleMouseUp } from './hooks/handleMouseUp';
 import { useTextBoxHandlers } from './hooks/useTextBoxHandlers';
+import { useShapeHandlers } from './hooks/useShapeHandlers';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
@@ -261,6 +262,16 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     handleTextChange,
     handleTextBlur
   } = useTextBoxHandlers(textBoxes, setTextBoxes, setSelectedBoxes);
+
+  // Refactored: useShapeHandlers for shape events
+  const {
+    handleTextDoubleClick: handleShapeTextDoubleClick,
+    handleTextBlur: handleShapeTextBlur,
+    handleTextChange: handleShapeTextChange,
+    handleShapeClick,
+    handleDelete: handleShapeDelete,
+    handleChangeGradient: handleShapeChangeGradient
+  } = useShapeHandlers(shapes, setShapes, setSelectedShapes, setSelectedBoxes, getRandomGradient);
 
   // Delete selected boxes with Delete key, add text with 'T'
   React.useEffect(() => {
@@ -632,25 +643,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             key={shape.id}
             shape={shape}
             selected={selectedShapes.includes(shape.id)}
-            onClick={(e, id) => {
-              e.stopPropagation();
-              const isMultiSelect = e.ctrlKey || e.metaKey;
-              if (isMultiSelect) {
-                if (selectedShapes.includes(id)) {
-                  setSelectedShapes(selectedShapes.filter(sid => sid !== id));
-                } else {
-                  setSelectedShapes([...selectedShapes, id]);
-                }
-              } else {
-                if (selectedShapes.length === 1 && selectedShapes[0] === id) {
-                  setSelectedShapes([]);
-                  setSelectedBoxes([]);
-                } else {
-                  setSelectedShapes([id]);
-                  setSelectedBoxes([]);
-                }
-              }
-            }}
+            onClick={(e, id) => handleShapeClick(e, id, selectedShapes, setSelectedShapes, setSelectedBoxes)}
             onMouseDown={(e, id) => {
               if (e.button !== 0) return;
               if (isPanning || resizingShape || resizingBox) return;
@@ -667,14 +660,11 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
                 offsetY: mouseY - shape.y
               });
             }}
-            onTextChange={(id, newText) => setShapes(shapes.map(s => s.id === id ? { ...s, text: newText } : s))}
-            onTextBlur={id => setShapes(shapes.map(s => s.id === id ? { ...s, isEditing: false } : s))}
-            onTextDoubleClick={id => setShapes(shapes.map(s => s.id === id ? { ...s, isEditing: true } : s))}
-            onDelete={id => setShapes(shapes.filter(s => s.id !== id))}
-            onChangeGradient={id => {
-              const randomGradient = getRandomGradient();
-              setShapes(shapes.map(s => s.id === id ? { ...s, gradient: randomGradient.value } : s));
-            }}
+            onTextChange={handleShapeTextChange}
+            onTextBlur={handleShapeTextBlur}
+            onTextDoubleClick={handleShapeTextDoubleClick}
+            onDelete={handleShapeDelete}
+            onChangeGradient={handleShapeChangeGradient}
             onResizeStart={(e, id) => handleShapeResizeStart(e, id)}
           />
         ))}
