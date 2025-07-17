@@ -936,21 +936,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         </div>
       </div>
 
-      {/* Instructions (fixed, always visible) */}
-      <div className="fixed bottom-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">How to use:</h3>
-        <ul className="text-xs text-gray-600 space-y-1">
-          <li>• Press T to add text with random gradient</li>
-          <li>• Press Q/W/E/R for Rectangle/Circle/Diamond/Pen tools</li>
-          <li>• Press S to add shapes, click and drag to draw</li>
-          <li>• Double-click text to edit content</li>
-          <li>• Drag elements to move them around</li>
-          <li>• Drag corner handle to resize</li>
-          <li>• Click 🎨 to change gradient randomly</li>
-          <li>• Click × to delete elements</li>
-          <li>• Paste images with Ctrl+V</li>
-        </ul>
-      </div>
+
     </div>
   );
 }
