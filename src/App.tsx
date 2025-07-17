@@ -107,7 +107,7 @@ function App() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [draggingImage, setDraggingImage] = useState<string | null>(null);
   const [dragImageStart, setDragImageStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
-  const [showGradientPicker, setShowGradientPicker] = useState(false);
+  // const [showGradientPicker, setShowGradientPicker] = useState(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]); // multi-select
   const [selectedShapes, setSelectedShapes] = useState<string[]>([]); // multi-select shapes
   const [lastMousePos, setLastMousePos] = useState<{x: number, y: number}>({x: 200, y: 200});
@@ -673,8 +673,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             setActiveTool={setActiveTool}
             handleExport={handleExport}
             handleImport={handleImport}
-            showGradientPicker={showGradientPicker}
-            setShowGradientPicker={setShowGradientPicker}
           />
           <div className="flex items-center space-x-3">
             <div className="text-sm text-gray-500 bg-white/80 px-3 py-1 rounded-full">
@@ -684,28 +682,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         </div>
       </div>
 
-      {/* Gradient Picker (fixed, always visible when open) */}
-      {showGradientPicker && (
-        <div className="fixed top-20 right-4 z-40 bg-white rounded-xl shadow-xl border border-gray-200 p-4 w-80">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Available Gradients</h3>
-          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-            {gradients.map((gradient) => (
-              <div
-                key={gradient.name}
-                className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-all cursor-pointer"
-                onClick={() => setShowGradientPicker(false)}
-              >
-                <div 
-                  className="w-full h-6 rounded mb-1"
-                  style={{ background: gradient.preview }}
-                />
-                <div className="text-xs text-gray-600 font-medium">{gradient.name}</div>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 mt-3">New text boxes get random gradients automatically</p>
-        </div>
-      )}
+
 
       {/* Whiteboard (zoomed/panned area) */}
       <div

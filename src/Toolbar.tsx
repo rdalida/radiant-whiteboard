@@ -1,13 +1,11 @@
 import React from 'react';
-import { Square, Circle, Diamond, Pen, Palette } from 'lucide-react';
+import { Square, Circle, Diamond, Pen } from 'lucide-react';
 
 interface ToolbarProps {
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
   setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen') => void;
   handleExport: () => void;
   handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  showGradientPicker: boolean;
-  setShowGradientPicker: (show: boolean) => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -15,8 +13,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setActiveTool,
   handleExport,
   handleImport,
-  showGradientPicker,
-  setShowGradientPicker,
 }) => {
   return (
     <div className="flex items-center space-x-2">
@@ -88,13 +84,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           style={{ display: 'none' }}
         />
       </label>
-      <button
-        onClick={() => setShowGradientPicker(!showGradientPicker)}
-        className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors"
-      >
-        <Palette className="w-4 h-4" />
-        <span>Gradients</span>
-      </button>
+
     </div>
   );
 };
