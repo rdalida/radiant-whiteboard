@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useWhiteboardPanZoom } from './hooks/useWhiteboardPanZoom';
 import { handleWhiteboardMouseDown } from './hooks/handleWhiteboardMouseDown';
 import { handleWhiteboardMouseMove } from './hooks/handleWhiteboardMouseMove';
 import { handleMouseUp } from './hooks/handleMouseUp';
@@ -117,10 +118,20 @@ function App() {
   const [lastMousePos, setLastMousePos] = useState<{x: number, y: number}>({x: 200, y: 200});
   const [marquee, setMarquee] = useState<null | {startX: number, startY: number, endX: number, endY: number}>(null);
   const [activeTool, setActiveTool] = useState<'text' | 'rectangle' | 'circle' | 'diamond' | 'pen'>('text');
-  const [zoom, setZoom] = useState(1); // 1 = 100%
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState<{ x: number, y: number } | null>(null);
+  const {
+    pan,
+    setPan,
+    zoom,
+    setZoom,
+    isPanning,
+    setIsPanning,
+    panStart,
+    setPanStart,
+    handleWheel,
+    startPan,
+    movePan,
+    endPan
+  } = useWhiteboardPanZoom();
 const [resizingBox, setResizingBox] = useState<string | null>(null);
 const [resizingShape, setResizingShape] = useState<string | null>(null);
 const [resizingImage, setResizingImage] = useState<string | null>(null);
@@ -351,25 +362,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     }, 500);
     return () => clearInterval(interval);
   }, []);
-  // Zoom with mouse wheel
-  const handleWhiteboardWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey) return; // Let browser handle pinch-zoom
-    e.preventDefault();
-    // Zoom in/out centered on mouse
-    const rect = whiteboardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const prevZoom = zoom;
-    let newZoom = zoom * (e.deltaY < 0 ? 1.1 : 0.9);
-    newZoom = Math.max(0.2, Math.min(3, newZoom));
-    // Adjust pan so zoom is centered on mouse
-    setPan(pan => ({
-      x: (pan.x - mouseX) * (newZoom / prevZoom) + mouseX,
-      y: (pan.y - mouseY) * (newZoom / prevZoom) + mouseY
-    }));
-    setZoom(newZoom);
-  };
+  // Zoom with mouse wheel now handled by useWhiteboardPanZoom
 
   const deleteTextBox = (id: string) => {
     setTextBoxes(textBoxes.filter(box => box.id !== id));
@@ -578,7 +571,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           setSelectedShapes,
           setMarquee
         })}
-        onWheel={handleWhiteboardWheel}
+        onWheel={e => handleWheel(e, whiteboardRef)}
         onContextMenu={e => e.preventDefault()}
         style={{ overflow: 'hidden' }}
       >
