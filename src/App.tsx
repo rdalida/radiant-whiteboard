@@ -10,6 +10,7 @@ import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
 import ShapeElement from './ShapeElement';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 export interface WhiteboardImage {
   id: string;
   x: number;
@@ -220,68 +221,21 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     handleChangeGradient: handleShapeChangeGradient
   } = useShapeHandlers(shapes, setShapes, setSelectedShapes, setSelectedBoxes, getRandomGradient);
 
-  // Delete selected boxes with Delete key, add text with 'T'
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Tool selection shortcuts (ignore if in input)
-      if (document.activeElement?.tagName !== 'INPUT') {
-        if (e.key === 'q' || e.key === 'Q') {
-          setActiveTool('rectangle');
-        } else if (e.key === 'w' || e.key === 'W') {
-          setActiveTool('circle');
-        } else if (e.key === 'e' || e.key === 'E') {
-          setActiveTool('diamond');
-        } else if (e.key === 'r' || e.key === 'R') {
-          setActiveTool('pen');
-        }
-      }
-      // Add text block with 'T' (not in input)
-      if ((e.key === 't' || e.key === 'T') && document.activeElement?.tagName !== 'INPUT') {
-        const randomGradient = getRandomGradient();
-        setTextBoxes(boxes => [
-          ...boxes,
-          {
-            id: Date.now().toString(),
-            x: lastMousePos.x - 100,
-            y: lastMousePos.y - 20,
-            text: 'Text',
-            gradient: randomGradient.value,
-            isEditing: false,
-            fontSize: 32,
-            width: 200,
-            height: 40
-          }
-        ]);
-      }
-      // Add shape with 'S' (not in input)
-      if ((e.key === 's' || e.key === 'S') && document.activeElement?.tagName !== 'INPUT') {
-        e.preventDefault(); // Prevent the 's' from being typed into the input
-        setShapes(shapes => [
-          ...shapes,
-          {
-            id: Date.now().toString(),
-            type: activeTool === 'rectangle' || activeTool === 'circle' || activeTool === 'diamond' ? activeTool : 'rectangle',
-            x: lastMousePos.x - 50,
-            y: lastMousePos.y - 50,
-            width: 100,
-            height: 100,
-            gradient: 'bg-gray-200', // gray by default
-            text: '',
-            isEditing: true,
-          }
-        ]);
-      }
-      // Delete selected boxes and shapes
-      if ((e.key === 'Delete' || e.key === 'Backspace') && (selectedBoxes.length > 0 || selectedShapes.length > 0)) {
-        setTextBoxes(boxes => boxes.filter(box => !selectedBoxes.includes(box.id)));
-        setShapes(shapes => shapes.filter(shape => !selectedShapes.includes(shape.id)));
-        setSelectedBoxes([]);
-        setSelectedShapes([]);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBoxes, selectedShapes, lastMousePos, textBoxes, shapes, activeTool]);
+  // Centralized keyboard shortcuts
+  useKeyboardShortcuts({
+    setActiveTool,
+    setTextBoxes,
+    setShapes,
+    setSelectedBoxes,
+    setSelectedShapes,
+    lastMousePos,
+    selectedBoxes,
+    selectedShapes,
+    textBoxes,
+    shapes,
+    activeTool,
+    getRandomGradient
+  });
 
   // ...existing code...
 
