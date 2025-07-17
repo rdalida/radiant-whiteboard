@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import WhiteboardCanvas from './WhiteboardCanvas';
+import TextBox from './TextBox';
 interface WhiteboardImage {
   id: string;
   x: number;
@@ -811,72 +813,12 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           />
         )}
         
-        {/* Render drawing paths */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-          {/* SVG gradients for pen paths */}
-          {drawingPaths.map((path) => {
-            // Attach a gradient definition for each path
-            const grad = (path as any).gradient || gradients[0];
-            // Parse the preview string for color stops
-            // e.g. 'linear-gradient(to right, #ef4444, #eab308, #22c55e, #3b82f6, #a855f7)'
-            const stops = grad.preview.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/g) || ['#000'];
-            return (
-              <linearGradient id={path.color} key={path.color} x1="0%" y1="0%" x2="100%" y2="0%">
-                {stops.map((color: string, i: number) => (
-                  <stop key={i} offset={`${(i/(stops.length-1))*100}%`} stopColor={color} />
-                ))}
-              </linearGradient>
-            );
-          })}
-          {/* Current path gradient */}
-          {currentPath && (currentPath as any).gradient && (
-            (() => {
-              const grad = (currentPath as any).gradient;
-              const gradientId = currentPath.color;
-              const stops = grad.preview.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/g) || ['#000'];
-              return (
-                <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-                  {stops.map((color: string, i: number) => (
-                    <stop key={i} offset={`${(i/(stops.length-1))*100}%`} stopColor={color} />
-                  ))}
-                </linearGradient>
-              );
-            })()
-          )}
-          {drawingPaths.map((path) => {
-            const now = Date.now();
-            const age = now - path.createdAt;
-            const fadeDuration = 1000; // ms
-            const visibleDuration = 3000; // ms
-            let opacity = 1;
-            if (age > visibleDuration) {
-              opacity = Math.max(0, 1 - (age - visibleDuration) / fadeDuration);
-            }
-            return (
-              <path
-                key={path.id}
-                d={path.points.length > 1 ? `M ${path.points[0].x} ${path.points[0].y} ${path.points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')}` : ''}
-                stroke={`url(#${path.color})`}
-                strokeWidth={path.strokeWidth}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ opacity, transition: 'opacity 0.3s linear' }}
-              />
-            );
-          })}
-          {/* Render current path being drawn */}
-          {currentPath && currentPath.points.length > 1 && (
-            <path
-              d={`M ${currentPath.points[0].x} ${currentPath.points[0].y} ${currentPath.points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')}`}
-              stroke={`url(#${currentPath.color})`}
-              strokeWidth={currentPath.strokeWidth}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-        </svg>
+        {/* Render drawing paths using WhiteboardCanvas */}
+        <WhiteboardCanvas
+          drawingPaths={drawingPaths}
+          currentPath={currentPath}
+          gradients={gradients}
+        />
         
         {/* Render images behind shapes and text */}
         {images.map((img) => (
@@ -1044,107 +986,56 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           </div>
         ))}
         {textBoxes.map((box) => (
-          <div
+          <TextBox
             key={box.id}
-            className={`absolute group ${selectedBoxes.includes(box.id) && !box.isEditing ? 'ring-2 ring-blue-400 z-20' : ''} hover:ring-2 hover:ring-gray-400`}
-            style={{ 
-              left: box.x, 
-              top: box.y,
-              width: box.width,
-              height: box.height
+            id={box.id}
+            x={box.x}
+            y={box.y}
+            width={box.width}
+            height={box.height}
+            text={box.text}
+            gradient={box.gradient}
+            isEditing={box.isEditing}
+            fontSize={box.fontSize}
+            selected={selectedBoxes.includes(box.id) && !box.isEditing}
+            // ...removed unused props...
+            onTextChange={handleTextChange}
+            onTextBlur={handleTextBlur}
+            onTextClick={(id, e) => {
+              // Deselect if already selected and not multi-select
+              if (!(e.ctrlKey || e.metaKey) && selectedBoxes.length === 1 && selectedBoxes[0] === id) {
+                setSelectedBoxes([]);
+                setSelectedShapes([]);
+                e.stopPropagation();
+                return;
+              }
+              handleTextClick(id, e);
             }}
-          >
-            {box.isEditing ? (
-              <input
-                type="text"
-                value={box.text}
-                onChange={(e) => handleTextChange(box.id, e.target.value)}
-                onBlur={() => handleTextBlur(box.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleTextBlur(box.id);
-                  }
-                }}
-                className="w-full h-full bg-transparent border-2 border-dashed border-gray-400 rounded px-2 py-1 font-bold focus:outline-none focus:border-blue-500 resize-none"
-                style={{ fontSize: `${box.fontSize}px` }}
-                autoFocus
-              />
-            ) : (
-              <div className="relative w-full h-full">
-                <div
-                  className={`font-bold ${box.gradient} bg-clip-text text-transparent cursor-move select-none w-full h-full flex items-center justify-center text-center leading-tight`}
-                  onClick={(e) => {
-                    // Deselect if already selected and not multi-select
-                    if (!(e.ctrlKey || e.metaKey) && selectedBoxes.length === 1 && selectedBoxes[0] === box.id) {
-                      setSelectedBoxes([]);
-                      setSelectedShapes([]);
-                      e.stopPropagation();
-                      return;
-                    }
-                    handleTextClick(box.id, e);
-                  }}
-                  onDoubleClick={() => handleTextDoubleClick(box.id)}
-                  onMouseDown={(e) => {
-                    if (e.button !== 0) return; // Only left mouse
-                    // Prevent drag if resizing or panning
-                    if (isPanning || resizingBox || resizingShape) return;
-                    e.stopPropagation();
-                    const rect = whiteboardRef.current?.getBoundingClientRect();
-                    if (!rect) return;
-                    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-                    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-                    setDraggingBox(box.id);
-                    setDragBoxStart({
-                      x: mouseX,
-                      y: mouseY,
-                      offsetX: mouseX - box.x,
-                      offsetY: mouseY - box.y
-                    });
-                  }}
-                  style={{ 
-                    fontSize: `${box.fontSize}px`,
-                    wordWrap: 'break-word',
-                    overflow: 'hidden'
-                  }}
-                  tabIndex={0}
-                >
-                  {box.text}
-                </div>
-                {/* Control buttons */}
-                <div className="absolute -top-8 -right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const randomGradient = getRandomGradient();
-                        changeGradient(box.id, randomGradient.value);
-                      }}
-                      className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                      title="Change gradient"
-                    >
-                      🎨
-                    </button>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteTextBox(box.id);
-                    }}
-                    className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                    title="Delete"
-                  >
-                    ×
-                  </button>
-                </div>
-                {/* Resize handle */}
-                <div
-                  className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white shadow-lg"
-                  onMouseDown={(e) => handleResizeStart(e, box.id)}
-                  title="Drag to resize"
-                />
-              </div>
-            )}
-          </div>
+            onTextDoubleClick={handleTextDoubleClick}
+            onMouseDown={(e, id) => {
+              if (e.button !== 0) return; // Only left mouse
+              // Prevent drag if resizing or panning
+              if (isPanning || resizingBox || resizingShape) return;
+              e.stopPropagation();
+              const rect = whiteboardRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+              const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+              setDraggingBox(id);
+              setDragBoxStart({
+                x: mouseX,
+                y: mouseY,
+                offsetX: mouseX - box.x,
+                offsetY: mouseY - box.y
+              });
+            }}
+            onResizeStart={handleResizeStart}
+            onDelete={deleteTextBox}
+            onChangeGradient={(id) => {
+              const randomGradient = getRandomGradient();
+              changeGradient(id, randomGradient.value);
+            }}
+          />
         ))}
 
         {/* Empty State */}
