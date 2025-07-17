@@ -20,18 +20,15 @@ const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, handleExport
             Radiant Notes
           </h1>
         </div>
-        {/* Toolbar */}
-        <Toolbar
-          activeTool={activeTool}
-          setActiveTool={setActiveTool}
-          handleExport={handleExport}
-          handleImport={handleImport}
-        />
-        <div className="flex items-center space-x-3">
-          <div className="text-sm text-gray-500 bg-white/80 px-3 py-1 rounded-full">
-            {activeTool === 'text' ? 'Press T to add text' : activeTool === 'pen' ? 'Draw freely on the whiteboard' : `Click to add ${activeTool}`}
-          </div>
+        <div className="flex-1 flex justify-center">
+          <Toolbar
+            activeTool={activeTool}
+            setActiveTool={setActiveTool}
+            handleExport={handleExport}
+            handleImport={handleImport}
+          />
         </div>
+        {/* Removed activeTool hint section */}
       </div>
     </div>
   );
