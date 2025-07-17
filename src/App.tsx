@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
+import ImageElement from './ImageElement';
 interface WhiteboardImage {
   id: string;
   x: number;
@@ -822,17 +823,15 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         
         {/* Render images behind shapes and text */}
         {images.map((img) => (
-          <div
+          <ImageElement
             key={img.id}
-            className="absolute group cursor-move"
-            style={{
-              left: img.x,
-              top: img.y,
-              width: img.width,
-              height: img.height,
-              zIndex: 5
-            }}
-            onMouseDown={e => {
+            id={img.id}
+            x={img.x}
+            y={img.y}
+            src={img.src}
+            width={img.width}
+            height={img.height}
+            onMouseDown={(e, id) => {
               if (e.button !== 0) return;
               if (isPanning || resizingBox || resizingShape || resizingImage || draggingBox || draggingShape) return;
               e.stopPropagation();
@@ -840,7 +839,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
               if (!rect) return;
               const mouseX = (e.clientX - rect.left - pan.x) / zoom;
               const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-              setDraggingImage(img.id);
+              setDraggingImage(id);
               setDragImageStart({
                 x: mouseX,
                 y: mouseY,
@@ -848,34 +847,9 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
                 offsetY: mouseY - img.y
               });
             }}
-          >
-            <img
-              src={img.src}
-              alt="Pasted"
-              className="w-full h-full object-contain"
-              draggable={false}
-              style={{ pointerEvents: 'none', userSelect: 'none' }}
-            />
-            {/* Delete button */}
-            <div className="absolute -top-8 right-0 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  setImages(images => images.filter(i => i.id !== img.id));
-                }}
-                className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                title="Delete image"
-              >
-                ×
-              </button>
-            </div>
-            {/* Resize handle */}
-            <div
-              className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white shadow-lg"
-              onMouseDown={(e) => handleImageResizeStart(e, img.id)}
-              title="Drag to resize"
-            />
-          </div>
+            onResizeStart={(e, id) => handleImageResizeStart(e, id)}
+            onDelete={id => setImages(images => images.filter(i => i.id !== id))}
+          />
         ))}
         {/* Render shapes first so they are always behind text */}
         {shapes.map((shape) => (
