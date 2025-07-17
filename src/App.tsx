@@ -1,4 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { handleWhiteboardMouseDown } from './hooks/handleWhiteboardMouseDown';
+import { handleWhiteboardMouseMove } from './hooks/handleWhiteboardMouseMove';
+import { handleMouseUp } from './hooks/handleMouseUp';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
@@ -234,177 +237,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   };
 
   // Marquee selection: start drag (left mouse) on any non-control area, Pan (right mouse) anywhere
-  const handleWhiteboardMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 2) {
-      // Right mouse: Pan from anywhere
-      setIsPanning(true);
-      setPanStart({ x: e.clientX, y: e.clientY });
-      return;
-    }
-    // Only start marquee if left mouse and not on a control/resize handle
-    if (e.button === 0) {
-      // If not clicking a resize handle or control button, start marquee or drawing
-      // (Check for className containing 'cursor-se-resize' or 'control' or 'bg-blue-500' for buttons)
-      const target = e.target as HTMLElement;
-      const isResizeHandle = target.className?.includes('cursor-se-resize');
-      const isControlButton = target.tagName === 'BUTTON' || target.className?.includes('control');
-      if (!isResizeHandle && !isControlButton) {
-        if (!whiteboardRef.current) return;
-        const rect = whiteboardRef.current.getBoundingClientRect();
-        // Adjust for pan/zoom
-        const x = (e.clientX - rect.left - pan.x) / zoom;
-        const y = (e.clientY - rect.top - pan.y) / zoom;
-        
-        // Start drawing if pen tool is active
-        if (activeTool === 'pen') {
-          setIsDrawing(true);
-          // Pick a random gradient for this path
-          const randomGradient = getRandomGradient();
-          // We'll use the gradient name as a unique id for the SVG gradient
-          const gradientId = 'pen-gradient-' + Date.now().toString() + Math.random().toString(36).slice(2);
-          const newPath: DrawingPath = {
-            id: Date.now().toString() + Math.random().toString(36).slice(2),
-            points: [{ x, y }],
-            color: gradientId, // store the gradient id
-            strokeWidth: 2,
-            createdAt: Date.now()
-          };
-          // Attach the gradient info to the path object for rendering
-          (newPath as any).gradient = randomGradient;
-          setCurrentPath(newPath);
-          return;
-        }
-        
-        // Otherwise start marquee selection
-        setMarquee({ startX: x, startY: y, endX: x, endY: y });
-      }
-    }
-  };
+  // Refactored: handleWhiteboardMouseDown is now imported from hooks
 
   // Pan move, shape drag, text drag, image drag, resize, drawing
-  const handleWhiteboardMouseMove = (e: React.MouseEvent) => {
-    if (isPanning && panStart) {
-      setPan(pan => ({
-        x: pan.x + (e.clientX - panStart.x),
-        y: pan.y + (e.clientY - panStart.y)
-      }));
-      setPanStart({ x: e.clientX, y: e.clientY });
-      return;
-    }
-    
-    // Drawing with pen tool
-    if (isDrawing && currentPath && activeTool === 'pen') {
-      const rect = whiteboardRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const x = (e.clientX - rect.left - pan.x) / zoom;
-      const y = (e.clientY - rect.top - pan.y) / zoom;
-      setCurrentPath(prev => prev ? {
-        ...prev,
-        points: [...prev.points, { x, y }]
-      } : null);
-      return;
-    }
-    
-    // Drag shape
-    if (draggingShape && dragShapeStart) {
-      const rect = whiteboardRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-      const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-      setShapes(shapes => shapes.map(shape =>
-        shape.id === draggingShape
-          ? { ...shape, x: mouseX - dragShapeStart.offsetX, y: mouseY - dragShapeStart.offsetY }
-          : shape
-      ));
-      return;
-    }
-    // Drag text box
-    if (draggingBox && dragBoxStart) {
-      const rect = whiteboardRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-      const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-      setTextBoxes(textBoxes => textBoxes.map(box =>
-        box.id === draggingBox
-          ? { ...box, x: mouseX - dragBoxStart.offsetX, y: mouseY - dragBoxStart.offsetY }
-          : box
-      ));
-      return;
-    }
-    // Drag image
-    if (draggingImage && dragImageStart) {
-      const rect = whiteboardRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-      const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-      setImages(images => images.map(img =>
-        img.id === draggingImage
-          ? { ...img, x: mouseX - dragImageStart.offsetX, y: mouseY - dragImageStart.offsetY }
-          : img
-      ));
-      return;
-    }
-    // Resize text box
-    if (resizingBox) {
-      const deltaX = e.clientX - resizeStart.x;
-      const deltaY = e.clientY - resizeStart.y;
-      const newWidth = Math.max(100, resizeStart.width + deltaX);
-      const newHeight = Math.max(30, resizeStart.height + deltaY);
-      const scaleFactor = Math.max(newWidth / resizeStart.width, newHeight / resizeStart.height);
-      const newFontSize = Math.max(12, Math.min(72, resizeStart.fontSize * scaleFactor));
-      setTextBoxes(textBoxes.map(box =>
-        box.id === resizingBox ? {
-          ...box,
-          width: newWidth,
-          height: newHeight,
-          fontSize: newFontSize
-        } : box
-      ));
-      return;
-    }
-    // Resize shape
-    if (resizingShape) {
-      const deltaX = e.clientX - resizeStart.x;
-      const deltaY = e.clientY - resizeStart.y;
-      const newWidth = Math.max(50, resizeStart.width + deltaX);
-      const newHeight = Math.max(50, resizeStart.height + deltaY);
-      setShapes(shapes.map(shape =>
-        shape.id === resizingShape ? {
-          ...shape,
-          width: newWidth,
-          height: newHeight
-        } : shape
-      ));
-      return;
-    }
-    // Resize image
-    if (resizingImage) {
-      const deltaX = e.clientX - resizeStart.x;
-      const deltaY = e.clientY - resizeStart.y;
-      const newWidth = Math.max(50, resizeStart.width + deltaX);
-      const newHeight = Math.max(50, resizeStart.height + deltaY);
-      setImages(images.map(img =>
-        img.id === resizingImage ? {
-          ...img,
-          width: newWidth,
-          height: newHeight
-        } : img
-      ));
-      return;
-    }
-    // Track last mouse position for 'T' shortcut
-    if (whiteboardRef.current) {
-      const rect = whiteboardRef.current.getBoundingClientRect();
-      setLastMousePos({
-        x: (e.clientX - rect.left - pan.x) / zoom,
-        y: (e.clientY - rect.top - pan.y) / zoom
-      });
-      // Marquee selection: update drag
-      if (marquee) {
-        setMarquee(m => m ? { ...m, endX: (e.clientX - rect.left - pan.x) / zoom, endY: (e.clientY - rect.top - pan.y) / zoom } : null);
-      }
-    }
-  };
+  // Refactored: handleWhiteboardMouseMove is now imported from hooks
 
   const handleTextDoubleClick = (id: string) => {
     setTextBoxes(textBoxes.map(box => 
@@ -506,59 +342,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
 
   // ...existing code...
 
-  const handleMouseUp = () => {
-    // Complete drawing path
-    if (isDrawing && currentPath) {
-      setDrawingPaths(prev => [...prev, currentPath]);
-      setCurrentPath(null);
-      setIsDrawing(false);
-    }
-    setResizingBox(null);
-    setResizingShape(null);
-    setResizingImage(null);
-    if (draggingShape) {
-      setDraggingShape(null);
-      setDragShapeStart(null);
-    }
-    if (draggingBox) {
-      setDraggingBox(null);
-      setDragBoxStart(null);
-    }
-    if (draggingImage) {
-      setDraggingImage(null);
-      setDragImageStart(null);
-    }
-    if (isPanning) {
-      setIsPanning(false);
-      setPanStart(null);
-    }
-    // Marquee selection: finish drag
-    if (marquee && whiteboardRef.current) {
-      const x1 = Math.min(marquee.startX, marquee.endX);
-      const y1 = Math.min(marquee.startY, marquee.endY);
-      const x2 = Math.max(marquee.startX, marquee.endX);
-      const y2 = Math.max(marquee.startY, marquee.endY);
-      // Select all boxes that intersect with the marquee rectangle
-      const selectedBoxes = textBoxes.filter(box => {
-        const bx1 = box.x;
-        const by1 = box.y;
-        const bx2 = box.x + box.width;
-        const by2 = box.y + box.height;
-        return bx2 > x1 && bx1 < x2 && by2 > y1 && by1 < y2;
-      }).map(box => box.id);
-      // Select all shapes that intersect with the marquee rectangle
-      const selectedShapesIds = shapes.filter(shape => {
-        const sx1 = shape.x;
-        const sy1 = shape.y;
-        const sx2 = shape.x + shape.width;
-        const sy2 = shape.y + shape.height;
-        return sx2 > x1 && sx1 < x2 && sy2 > y1 && sy1 < y2;
-      }).map(shape => shape.id);
-      setSelectedBoxes(selectedBoxes);
-      setSelectedShapes(selectedShapesIds);
-      setMarquee(null);
-    }
-  };
+  // Refactored: handleMouseUp is now imported from hooks
   // Fade out and remove pen marks after a few seconds
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -690,10 +474,110 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         ref={whiteboardRef}
         className={`relative w-full h-screen select-none pt-24 ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
         onClick={handleWhiteboardClick}
-        onMouseDown={handleWhiteboardMouseDown}
-        onMouseMove={handleWhiteboardMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseDown={e => handleWhiteboardMouseDown({
+          e,
+          whiteboardRef,
+          pan,
+          zoom,
+          activeTool,
+          setIsPanning,
+          setPanStart,
+          setMarquee,
+          setIsDrawing,
+          setCurrentPath,
+          getRandomGradient
+        })}
+        onMouseMove={e => handleWhiteboardMouseMove({
+          e,
+          whiteboardRef,
+          pan,
+          zoom,
+          isPanning,
+          panStart,
+          setPan,
+          setPanStart,
+          isDrawing,
+          currentPath,
+          activeTool,
+          setCurrentPath,
+          draggingShape,
+          dragShapeStart,
+          setShapes,
+          draggingBox,
+          dragBoxStart,
+          setTextBoxes,
+          draggingImage,
+          dragImageStart,
+          setImages,
+          resizingBox,
+          resizeStart,
+          setTextBoxesResize: setTextBoxes,
+          resizingShape,
+          setShapesResize: setShapes,
+          resizingImage,
+          setImagesResize: setImages,
+          setLastMousePos,
+          marquee,
+          setMarquee
+        })}
+        onMouseUp={() => handleMouseUp({
+          isDrawing,
+          currentPath,
+          setDrawingPaths,
+          setCurrentPath,
+          setIsDrawing,
+          setResizingBox,
+          setResizingShape,
+          setResizingImage,
+          draggingShape,
+          setDraggingShape,
+          setDragShapeStart,
+          draggingBox,
+          setDraggingBox,
+          setDragBoxStart,
+          draggingImage,
+          setDraggingImage,
+          setDragImageStart,
+          isPanning,
+          setIsPanning,
+          setPanStart,
+          marquee,
+          whiteboardRef,
+          textBoxes,
+          shapes,
+          setSelectedBoxes,
+          setSelectedShapes,
+          setMarquee
+        })}
+        onMouseLeave={() => handleMouseUp({
+          isDrawing,
+          currentPath,
+          setDrawingPaths,
+          setCurrentPath,
+          setIsDrawing,
+          setResizingBox,
+          setResizingShape,
+          setResizingImage,
+          draggingShape,
+          setDraggingShape,
+          setDragShapeStart,
+          draggingBox,
+          setDraggingBox,
+          setDragBoxStart,
+          draggingImage,
+          setDraggingImage,
+          setDragImageStart,
+          isPanning,
+          setIsPanning,
+          setPanStart,
+          marquee,
+          whiteboardRef,
+          textBoxes,
+          shapes,
+          setSelectedBoxes,
+          setSelectedShapes,
+          setMarquee
+        })}
         onWheel={handleWhiteboardWheel}
         onContextMenu={e => e.preventDefault()}
         style={{ overflow: 'hidden' }}
@@ -709,7 +593,19 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             top: 0,
             pointerEvents: 'auto', // Always allow pointer events for panning
           }}
-          onMouseDown={handleWhiteboardMouseDown}
+        onMouseDown={e => handleWhiteboardMouseDown({
+          e,
+          whiteboardRef,
+          pan,
+          zoom,
+          activeTool,
+          setIsPanning,
+          setPanStart,
+          setMarquee,
+          setIsDrawing,
+          setCurrentPath,
+          getRandomGradient
+        })}
         >
         {/* Marquee selection rectangle */}
         {marquee && (
