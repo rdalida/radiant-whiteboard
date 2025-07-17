@@ -3,6 +3,7 @@ import { useWhiteboardPanZoom } from './hooks/useWhiteboardPanZoom';
 import { handleWhiteboardMouseDown } from './hooks/handleWhiteboardMouseDown';
 import { handleWhiteboardMouseMove } from './hooks/handleWhiteboardMouseMove';
 import { handleMouseUp } from './hooks/handleMouseUp';
+import { useTextBoxHandlers } from './hooks/useTextBoxHandlers';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
@@ -253,38 +254,13 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   // Pan move, shape drag, text drag, image drag, resize, drawing
   // Refactored: handleWhiteboardMouseMove is now imported from hooks
 
-  const handleTextDoubleClick = (id: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, isEditing: true } : box
-    ));
-    setSelectedBoxes([]);
-  };
-
-  // Multi-select logic: Ctrl/Cmd+Click adds/removes, else single select
-  const handleTextClick = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (e.ctrlKey || e.metaKey) {
-      // Add/remove from selection
-      setSelectedBoxes(prev => 
-        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-      );
-    } else {
-      // Single select
-      setSelectedBoxes([id]);
-    }
-  };
-
-  const handleTextChange = (id: string, newText: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, text: newText } : box
-    ));
-  };
-
-  const handleTextBlur = (id: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, isEditing: false } : box
-    ));
-  };
+  // Refactored: useTextBoxHandlers for text box events
+  const {
+    handleTextDoubleClick,
+    handleTextClick,
+    handleTextChange,
+    handleTextBlur
+  } = useTextBoxHandlers(textBoxes, setTextBoxes, setSelectedBoxes);
 
   // Delete selected boxes with Delete key, add text with 'T'
   React.useEffect(() => {
