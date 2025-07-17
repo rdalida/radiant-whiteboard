@@ -5,11 +5,12 @@ import { handleWhiteboardMouseMove } from './hooks/handleWhiteboardMouseMove';
 import { handleMouseUp } from './hooks/handleMouseUp';
 import { useTextBoxHandlers } from './hooks/useTextBoxHandlers';
 import { useShapeHandlers } from './hooks/useShapeHandlers';
+import { useImageHandlers } from './hooks/useImageHandlers';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
 import ShapeElement from './ShapeElement';
-interface WhiteboardImage {
+export interface WhiteboardImage {
   id: string;
   x: number;
   y: number;
@@ -124,15 +125,11 @@ function App() {
     pan,
     setPan,
     zoom,
-    setZoom,
     isPanning,
     setIsPanning,
     panStart,
     setPanStart,
-    handleWheel,
-    startPan,
-    movePan,
-    endPan
+    handleWheel
   } = useWhiteboardPanZoom();
 const [resizingBox, setResizingBox] = useState<string | null>(null);
 const [resizingShape, setResizingShape] = useState<string | null>(null);
@@ -219,22 +216,22 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     });
   };
 
-  // Restore resize for image
-  const handleImageResizeStart = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    const rect = whiteboardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const image = images.find(img => img.id === id);
-    if (!image) return;
-    setResizingImage(id);
-    setResizeStart({
-      x: e.clientX,
-      y: e.clientY,
-      width: image.width,
-      height: image.height,
-      fontSize: 0 // Not used for images
-    });
-  };
+  // Refactored: useImageHandlers for image events
+  const {
+    handleImageMouseDown,
+    handleImageResizeStart,
+    handleImageDelete
+  } = useImageHandlers({
+    images,
+    setImages,
+    setDraggingImage,
+    setDragImageStart,
+    setResizingImage,
+    setResizeStart,
+    whiteboardRef,
+    pan,
+    zoom
+  });
 
   const getRandomGradient = () => {
     return gradients[Math.floor(Math.random() * gradients.length)];
@@ -618,23 +615,11 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             width={img.width}
             height={img.height}
             onMouseDown={(e, id) => {
-              if (e.button !== 0) return;
               if (isPanning || resizingBox || resizingShape || resizingImage || draggingBox || draggingShape) return;
-              e.stopPropagation();
-              const rect = whiteboardRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-              const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-              setDraggingImage(id);
-              setDragImageStart({
-                x: mouseX,
-                y: mouseY,
-                offsetX: mouseX - img.x,
-                offsetY: mouseY - img.y
-              });
+              handleImageMouseDown(e, id);
             }}
-            onResizeStart={(e, id) => handleImageResizeStart(e, id)}
-            onDelete={id => setImages(images => images.filter(i => i.id !== id))}
+            onResizeStart={handleImageResizeStart}
+            onDelete={handleImageDelete}
           />
         ))}
         {/* Render shapes first so they are always behind text */}
