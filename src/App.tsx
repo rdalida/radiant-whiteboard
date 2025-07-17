@@ -56,6 +56,7 @@ interface Shape {
 }
 
 import { gradients } from './gradients';
+import { handleExport, handleImport } from './hooks/useWhiteboardIO';
 
 function App() {
   const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
@@ -262,49 +263,14 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     ));
   };
 
-  // Export whiteboard state as JSON
-  const handleExport = () => {
-    const data = {
-      textBoxes,
-      shapes,
-      images,
-      drawingPaths
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'radiant-notes-export.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // Import whiteboard state from JSON
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.textBoxes && data.shapes && data.images && data.drawingPaths) {
-          setTextBoxes(data.textBoxes);
-          setShapes(data.shapes);
-          setImages(data.images);
-          setDrawingPaths(data.drawingPaths);
-        } else {
-          alert('Invalid file format.');
-        }
-      } catch {
-        alert('Failed to import file.');
-      }
-    };
-    reader.readAsText(file);
-    // Reset input value so the same file can be imported again if needed
-    e.target.value = '';
-  };
+  // Export and import handlers from useWhiteboardIO
+  const onExport = () => handleExport({ textBoxes, shapes, images, drawingPaths });
+  const onImport = (e: React.ChangeEvent<HTMLInputElement>) => handleImport(e, {
+    setTextBoxes,
+    setShapes,
+    setImages,
+    setDrawingPaths
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
@@ -326,8 +292,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       <Header
         activeTool={activeTool}
         setActiveTool={setActiveTool}
-        handleExport={handleExport}
-        handleImport={handleImport}
+        handleExport={onExport}
+        handleImport={onImport}
       />
 
 
