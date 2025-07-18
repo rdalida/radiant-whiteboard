@@ -1,14 +1,5 @@
 import { useCallback } from 'react';
-
-interface Arrow {
-  id: string;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  gradient: string;
-  strokeStyle: 'solid' | 'dashed';
-}
+import { Arrow } from '../ArrowElement';
 
 export function useArrowHandlers(
   setArrows: (fn: any) => void, 

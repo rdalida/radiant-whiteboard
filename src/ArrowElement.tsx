@@ -97,9 +97,9 @@ const ArrowElement: React.FC<ArrowElementProps> = ({ arrow, selected, onClick, o
           y1={startY + 10} 
           x2={lineEndX + 10} 
           y2={lineEndY + 10} 
-          stroke={`url(#arrow-gradient-${arrow.id})`} 
+          stroke={arrow.strokeStyle === 'dashed' ? colors.to : `url(#arrow-gradient-${arrow.id})`} 
           strokeWidth={8}
-          strokeDasharray={arrow.strokeStyle === 'dashed' ? '8,4' : 'none'}
+          strokeDasharray={arrow.strokeStyle === 'dashed' ? '16 12' : ''}
           strokeLinecap="round"
         />
         <polygon 

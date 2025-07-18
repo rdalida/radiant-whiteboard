@@ -102,6 +102,8 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         top: toolbarY,
         transform: 'translateX(-50%)', // Center horizontally
       }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       {/* Text Formatting Controls - only for textbox and shapes */}
       {hasTextFormatting && (

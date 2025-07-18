@@ -38,8 +38,10 @@ export function handleWhiteboardMouseDown({
   }
   if (e.button === 0) {
     const target = e.target as HTMLElement;
-    const isResizeHandle = target.className?.includes('cursor-se-resize');
-    const isControlButton = target.tagName === 'BUTTON' || target.className?.includes('control');
+    const className = target.className || '';
+    const classNameStr = typeof className === 'string' ? className : '';
+    const isResizeHandle = classNameStr.includes('cursor-se-resize');
+    const isControlButton = target.tagName === 'BUTTON' || classNameStr.includes('control');
     if (!isResizeHandle && !isControlButton) {
       if (!whiteboardRef.current) return;
       const rect = whiteboardRef.current.getBoundingClientRect();
