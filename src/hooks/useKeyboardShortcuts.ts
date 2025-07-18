@@ -52,7 +52,12 @@ export function useKeyboardShortcuts({
 }: UseKeyboardShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.activeElement?.tagName !== 'INPUT') {
+      const activeTag = document.activeElement?.tagName;
+      const isInputFocused = activeTag === 'INPUT' ||
+        activeTag === 'TEXTAREA' ||
+        (document.activeElement as HTMLElement | null)?.isContentEditable;
+      const isEditingText = textBoxes.some(box => box.isEditing);
+      if (!isInputFocused && !isEditingText) {
         if (e.key === 'q' || e.key === 'Q') {
           setActiveTool('rectangle');
         } else if (e.key === 'w' || e.key === 'W') {
@@ -66,7 +71,7 @@ export function useKeyboardShortcuts({
           setSidebarOpen(prev => !prev);
         }
       }
-      if ((e.key === 't' || e.key === 'T') && document.activeElement?.tagName !== 'INPUT') {
+      if ((e.key === 't' || e.key === 'T') && !isInputFocused && !isEditingText) {
         const randomGradient = getRandomGradient();
         setTextBoxes(boxes => [
           ...boxes,
@@ -89,7 +94,7 @@ export function useKeyboardShortcuts({
           }
         ]);
       }
-      if ((e.key === 'd' || e.key === 'D') && document.activeElement?.tagName !== 'INPUT') {
+      if ((e.key === 'd' || e.key === 'D') && !isInputFocused && !isEditingText) {
         e.preventDefault();
         setShapes(shapes => [
           ...shapes,
@@ -112,7 +117,7 @@ export function useKeyboardShortcuts({
           }
         ]);
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && (selectedBoxes.length > 0 || selectedShapes.length > 0 || selectedMindMapNodes.length > 0)) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused && !isEditingText && (selectedBoxes.length > 0 || selectedShapes.length > 0 || selectedMindMapNodes.length > 0)) {
         e.preventDefault();
         
         // Delete selected text boxes
@@ -137,28 +142,28 @@ export function useKeyboardShortcuts({
       }
       
       // Mind Map shortcuts
-      if ((e.key === 'm' || e.key === 'M') && document.activeElement?.tagName !== 'INPUT') {
+      if ((e.key === 'm' || e.key === 'M') && !isInputFocused && !isEditingText) {
         e.preventDefault();
         addMindMapNode('Node');
       }
-      
-      if (e.key === 'Tab' && activeMindMapNode && document.activeElement?.tagName !== 'INPUT') {
+
+      if (e.key === 'Tab' && activeMindMapNode && !isInputFocused && !isEditingText) {
         e.preventDefault();
         addSiblingNode(activeMindMapNode);
       }
-      
-      if (e.key === 'Enter' && activeMindMapNode && document.activeElement?.tagName !== 'INPUT') {
+
+      if (e.key === 'Enter' && activeMindMapNode && !isInputFocused && !isEditingText) {
         e.preventDefault();
         addChildNode(activeMindMapNode);
       }
-      
-      if ((e.key === 'Delete' || e.key === 'Backspace') && activeMindMapNode && document.activeElement?.tagName !== 'INPUT') {
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && activeMindMapNode && !isInputFocused && !isEditingText) {
         e.preventDefault();
         handleMindMapNodeDelete(activeMindMapNode);
       }
-      
+
       // Arrow key movement for selected mind map nodes
-      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selectedMindMapNodes.length > 0 && document.activeElement?.tagName !== 'INPUT') {
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selectedMindMapNodes.length > 0 && !isInputFocused && !isEditingText) {
         e.preventDefault();
         const moveDistance = e.shiftKey ? 10 : 1; // Hold Shift for faster movement
         
