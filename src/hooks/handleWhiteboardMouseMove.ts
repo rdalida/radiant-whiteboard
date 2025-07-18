@@ -20,12 +20,8 @@ interface HandleWhiteboardMouseMoveParams {
   dragArrowStart: { mouseX: number; mouseY: number; arrowPositions: { [id: string]: { startX: number; startY: number; endX: number; endY: number } } } | null;
   setArrows: (fn: any) => void;
   selectedArrows: string[];
-  draggingShape: string | null;
-  dragShapeStart: { x: number; y: number; offsetX: number; offsetY: number } | null;
-  setShapes: (fn: any) => void;
-  draggingBox: string | null;
-  dragBoxStart: { x: number; y: number; offsetX: number; offsetY: number } | null;
-  setTextBoxes: (fn: any) => void;
+  // REMOVED: draggingShape, dragShapeStart, setShapes
+  // REMOVED: draggingBox, dragBoxStart, setTextBoxes
   draggingImage: string | null;
   dragImageStart: { x: number; y: number; offsetX: number; offsetY: number } | null;
   setImages: (fn: any) => void;
@@ -61,12 +57,8 @@ export function handleWhiteboardMouseMove({
   dragArrowStart,
   setArrows,
   selectedArrows,
-  draggingShape,
-  dragShapeStart,
-  setShapes,
-  draggingBox,
-  dragBoxStart,
-  setTextBoxes,
+  // REMOVED: draggingShape, dragShapeStart, setShapes
+  // REMOVED: draggingBox, dragBoxStart, setTextBoxes
   draggingImage,
   dragImageStart,
   setImages,
@@ -108,18 +100,7 @@ export function handleWhiteboardMouseMove({
     setCurrentArrow({ ...currentArrow, endX: x, endY: y });
     return;
   }
-  if (draggingShape && dragShapeStart) {
-    const rect = whiteboardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-    setShapes((prev: any[]) => prev.map((shape: any) =>
-      shape.id === draggingShape
-        ? { ...shape, x: mouseX - dragShapeStart.offsetX, y: mouseY - dragShapeStart.offsetY }
-        : shape
-    ));
-    return;
-  }
+  // REMOVED: Shape dragging logic - now handled by universal dragging system
   if (draggingArrow && dragArrowStart) {
     const rect = whiteboardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -146,18 +127,7 @@ export function handleWhiteboardMouseMove({
     }));
     return;
   }
-  if (draggingBox && dragBoxStart) {
-    const rect = whiteboardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-    setTextBoxes((prev: any[]) => prev.map((box: any) =>
-      box.id === draggingBox
-        ? { ...box, x: mouseX - dragBoxStart.offsetX, y: mouseY - dragBoxStart.offsetY }
-        : box
-    ));
-    return;
-  }
+  // REMOVED: Text box dragging logic - now handled by universal dragging system
   if (draggingImage && dragImageStart) {
     const rect = whiteboardRef.current?.getBoundingClientRect();
     if (!rect) return;

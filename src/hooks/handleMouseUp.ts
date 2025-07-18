@@ -14,12 +14,8 @@ interface HandleMouseUpParams {
   setResizingBox: (val: string | null) => void;
   setResizingShape: (val: string | null) => void;
   setResizingImage: (val: string | null) => void;
-  draggingShape: string | null;
-  setDraggingShape: (val: string | null) => void;
-  setDragShapeStart: (val: any) => void;
-  draggingBox: string | null;
-  setDraggingBox: (val: string | null) => void;
-  setDragBoxStart: (val: any) => void;
+  // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
+  // REMOVED: draggingBox, setDraggingBox, setDragBoxStart  
   draggingImage: string | null;
   setDraggingImage: (val: string | null) => void;
   setDragImageStart: (val: any) => void;
@@ -40,6 +36,8 @@ interface HandleMouseUpParams {
   setSelectedArrows?: (val: string[]) => void;
   setSelectedMindMapNodes: (val: string[]) => void;
   setMarquee: (val: any) => void;
+  // Universal dragging end callback
+  endDragCallback?: () => void;
 }
 
 export function handleMouseUp({
@@ -56,12 +54,8 @@ export function handleMouseUp({
   setResizingBox,
   setResizingShape,
   setResizingImage,
-  draggingShape,
-  setDraggingShape,
-  setDragShapeStart,
-  draggingBox,
-  setDraggingBox,
-  setDragBoxStart,
+  // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
+  // REMOVED: draggingBox, setDraggingBox, setDragBoxStart
   draggingImage,
   setDraggingImage,
   setDragImageStart,
@@ -81,7 +75,8 @@ export function handleMouseUp({
   setSelectedShapes,
   setSelectedArrows,
   setSelectedMindMapNodes,
-  setMarquee
+  setMarquee,
+  endDragCallback
 }: HandleMouseUpParams) {
   if (isDrawing && currentPath) {
     setDrawingPaths((prev: any[]) => [...prev, currentPath]);
@@ -96,13 +91,9 @@ export function handleMouseUp({
   setResizingBox(null);
   setResizingShape(null);
   setResizingImage(null);
-  if (draggingShape) {
-    setDraggingShape(null);
-    setDragShapeStart(null);
-  }
-  if (draggingBox) {
-    setDraggingBox(null);
-    setDragBoxStart(null);
+  // REMOVED: Shape and text box drag cleanup - now handled by universal dragging system
+  if (endDragCallback) {
+    endDragCallback();
   }
   if (draggingImage) {
     setDraggingImage(null);

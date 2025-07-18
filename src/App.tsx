@@ -7,6 +7,7 @@ import { useTextBoxHandlers } from './hooks/useTextBoxHandlers';
 import { useShapeHandlers } from './hooks/useShapeHandlers';
 import { useImageHandlers } from './hooks/useImageHandlers';
 import { useArrowHandlers } from './hooks/useArrowHandlers';
+import { useUniversalDragging } from './hooks/useUniversalDragging';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
@@ -139,17 +140,21 @@ function App() {
     setPanStart,
     handleWheel
   } = useWhiteboardPanZoom();
+  
+  // Universal dragging system
+  const { universalDragState, startDrag, updateDrag, endDrag } = useUniversalDragging();
+  
   const [resizingBox, setResizingBox] = useState<string | null>(null);
   const [resizingShape, setResizingShape] = useState<string | null>(null);
   const [resizingImage, setResizingImage] = useState<string | null>(null);
   const [resizingArrow, setResizingArrow] = useState<{ id: string; handle: 'start' | 'end' } | null>(null);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, fontSize: 0 });
-// Drag state for shapes
-const [draggingShape, setDraggingShape] = useState<string | null>(null);
-const [dragShapeStart, setDragShapeStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
-// Drag state for text boxes
-const [draggingBox, setDraggingBox] = useState<string | null>(null);
-const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
+// Drag state for shapes - DEPRECATED (using universal dragging now)
+// const [draggingShape, setDraggingShape] = useState<string | null>(null);
+// const [dragShapeStart, setDragShapeStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
+// Drag state for text boxes - DEPRECATED (using universal dragging now)
+// const [draggingBox, setDraggingBox] = useState<string | null>(null);
+// const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
   const whiteboardRef = useRef<HTMLDivElement>(null);
   
   // Auto-save hook
@@ -322,7 +327,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   // Refactored: useTextBoxHandlers for text box events
   const {
     handleTextDoubleClick,
-    handleTextClick,
+    // handleTextClick, // Now handled in onMouseUp
     handleTextChange,
     handleTextBlur
   } = useTextBoxHandlers(textBoxes, setTextBoxes, setSelectedBoxes);
@@ -332,7 +337,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     handleTextDoubleClick: handleShapeTextDoubleClick,
     handleTextBlur: handleShapeTextBlur,
     handleTextChange: handleShapeTextChange,
-    handleShapeClick,
+    // handleShapeClick, // Now handled in onMouseUp
     handleDelete: handleShapeDelete,
     handleChangeGradient: handleShapeChangeGradient
   } = useShapeHandlers(shapes, setShapes, setSelectedShapes, setSelectedBoxes, getRandomGradient);
@@ -928,12 +933,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             dragArrowStart,
             setArrows,
             selectedArrows,
-            draggingShape,
-            dragShapeStart,
-            setShapes,
-            draggingBox,
-            dragBoxStart,
-            setTextBoxes,
             draggingImage,
             dragImageStart,
             setImages,
@@ -948,6 +947,53 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             marquee,
             setMarquee
           });
+          
+          // Universal dragging system - handle all element types
+          if (universalDragState.draggingElement && universalDragState.dragStartData) {
+            const rect = whiteboardRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            
+            const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+            const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+            
+            updateDrag(mouseX, mouseY, (deltaX, deltaY, originalPositions) => {
+              switch (universalDragState.dragType) {
+                case 'textbox':
+                  setTextBoxes(textBoxes => 
+                    textBoxes.map(textBox => {
+                      if (selectedBoxes.includes(textBox.id) && originalPositions[textBox.id]) {
+                        const originalPos = originalPositions[textBox.id];
+                        return { ...textBox, x: originalPos.x + deltaX, y: originalPos.y + deltaY };
+                      }
+                      return textBox;
+                    })
+                  );
+                  break;
+                case 'shape':
+                  setShapes(shapes => 
+                    shapes.map(shape => {
+                      if (selectedShapes.includes(shape.id) && originalPositions[shape.id]) {
+                        const originalPos = originalPositions[shape.id];
+                        return { ...shape, x: originalPos.x + deltaX, y: originalPos.y + deltaY };
+                      }
+                      return shape;
+                    })
+                  );
+                  break;
+                case 'image':
+                  setImages(images => 
+                    images.map(image => {
+                      if (selectedImages.includes(image.id) && originalPositions[image.id]) {
+                        const originalPos = originalPositions[image.id];
+                        return { ...image, x: originalPos.x + deltaX, y: originalPos.y + deltaY };
+                      }
+                      return image;
+                    })
+                  );
+                  break;
+              }
+            });
+          }
           
           // Handle mind map node resizing
           if (resizingMindMapNode && resizeMindMapStart) {
@@ -1016,7 +1062,12 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             );
           }
         }}
-        onMouseUp={() => {
+        onMouseUp={(e) => {
+          // Check if dragging occurred before calling endDrag
+          const wasDragging = universalDragState.hasDragged;
+          const draggedElementId = universalDragState.draggingElement;
+          const draggedElementType = universalDragState.dragType;
+          
           handleMouseUp({
             isDrawing,
             currentPath,
@@ -1031,12 +1082,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             setResizingBox,
             setResizingShape,
             setResizingImage,
-            draggingShape,
-            setDraggingShape,
-            setDragShapeStart,
-            draggingBox,
-            setDraggingBox,
-            setDragBoxStart,
+            // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
+            // REMOVED: draggingBox, setDraggingBox, setDragBoxStart
             draggingImage,
             setDraggingImage,
             setDragImageStart,
@@ -1056,8 +1103,48 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             setSelectedShapes,
             setSelectedArrows,
             setSelectedMindMapNodes,
-            setMarquee
+            setMarquee,
+            endDragCallback: endDrag
           });
+          
+          // If no dragging occurred and we were preparing to drag, handle selection
+          if (!wasDragging && draggedElementId && draggedElementType) {
+            // This was a click, not a drag - handle selection
+            if (draggedElementType === 'shape') {
+              // Check if it was a Ctrl/Cmd click by looking at current event
+              const isMultiSelect = e.ctrlKey || e.metaKey;
+              if (isMultiSelect) {
+                setSelectedShapes(prev => 
+                  prev.includes(draggedElementId) 
+                    ? prev.filter(id => id !== draggedElementId)
+                    : [...prev, draggedElementId]
+                );
+              } else {
+                // Single click - always select this shape
+                setSelectedShapes([draggedElementId]);
+                setSelectedBoxes([]);
+                setSelectedImages([]);
+                setSelectedArrows([]);
+                setSelectedMindMapNodes([]);
+              }
+            } else if (draggedElementType === 'textbox') {
+              const isMultiSelect = e.ctrlKey || e.metaKey;
+              if (isMultiSelect) {
+                setSelectedBoxes(prev => 
+                  prev.includes(draggedElementId) 
+                    ? prev.filter(id => id !== draggedElementId)
+                    : [...prev, draggedElementId]
+                );
+              } else {
+                // Single click - always select this text box
+                setSelectedBoxes([draggedElementId]);
+                setSelectedShapes([]);
+                setSelectedImages([]);
+                setSelectedArrows([]);
+                setSelectedMindMapNodes([]);
+              }
+            }
+          }
           
           // Handle mind map node resize end
           if (resizingMindMapNode) {
@@ -1091,12 +1178,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             setResizingBox,
             setResizingShape,
             setResizingImage,
-            draggingShape,
-            setDraggingShape,
-            setDragShapeStart,
-            draggingBox,
-            setDraggingBox,
-            setDragBoxStart,
+            // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
+            // REMOVED: draggingBox, setDraggingBox, setDragBoxStart
             draggingImage,
             setDraggingImage,
             setDragImageStart,
@@ -1116,7 +1199,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             setSelectedShapes,
             setSelectedArrows,
             setSelectedMindMapNodes,
-            setMarquee
+            setMarquee,
+            endDragCallback: endDrag
           });
           
           // Handle mind map node resize end
@@ -1213,7 +1297,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             selected={selectedImages.includes(img.id)}
             onClick={(e, id) => handleImageClick(e, id)}
             onMouseDown={(e, id) => {
-              if (isPanning || resizingBox || resizingShape || resizingImage || draggingBox || draggingShape) return;
+              if (isPanning || resizingBox || resizingShape || resizingImage || universalDragState.draggingElement) return;
               handleImageMouseDown(e, id);
             }}
             onResizeStart={handleImageResizeStart}
@@ -1225,7 +1309,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             key={shape.id}
             shape={shape}
             selected={selectedShapes.includes(shape.id)}
-            onClick={(e, id) => handleShapeClick(e, id, selectedShapes, setSelectedShapes, setSelectedBoxes)}
+            onClick={(e) => {
+              // Selection is now handled in onMouseUp to differentiate clicks from drags
+              e.stopPropagation();
+            }}
             onMouseDown={(e, id) => {
               if (e.button !== 0) return;
               if (isPanning || resizingShape || resizingBox) return;
@@ -1234,13 +1321,13 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
               if (!rect) return;
               const mouseX = (e.clientX - rect.left - pan.x) / zoom;
               const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-              setDraggingShape(id);
-              setDragShapeStart({
-                x: mouseX,
-                y: mouseY,
-                offsetX: mouseX - shape.x,
-                offsetY: mouseY - shape.y
-              });
+              
+              // Don't change selection here - let the onClick handler deal with selection
+              // Just prepare for potential dragging with current selection
+              const currentSelection = selectedShapes.includes(id) ? selectedShapes : [id];
+              
+              // Use universal dragging system
+              startDrag(id, 'shape', mouseX, mouseY, currentSelection, shapes);
             }}
             onTextChange={handleShapeTextChange}
             onTextBlur={handleShapeTextBlur}
@@ -1319,16 +1406,9 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             color={box.color}
             onTextChange={handleTextChange}
             onTextBlur={handleTextBlur}
-            onTextClick={(id, e) => {
-              // Deselect if already selected and not multi-select
-              if (!(e.ctrlKey || e.metaKey) && selectedBoxes.length === 1 && selectedBoxes[0] === id) {
-                setSelectedBoxes([]);
-                setSelectedShapes([]);
-                setSelectedArrows([]);
-                e.stopPropagation();
-                return;
-              }
-              handleTextClick(id, e);
+            onTextClick={(_, e) => {
+              // Selection is now handled in onMouseUp to differentiate clicks from drags
+              e.stopPropagation();
             }}
             onTextDoubleClick={handleTextDoubleClick}
             onMouseDown={(e, id) => {
@@ -1340,13 +1420,13 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
               if (!rect) return;
               const mouseX = (e.clientX - rect.left - pan.x) / zoom;
               const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-              setDraggingBox(id);
-              setDragBoxStart({
-                x: mouseX,
-                y: mouseY,
-                offsetX: mouseX - box.x,
-                offsetY: mouseY - box.y
-              });
+              
+              // Don't change selection here - let the onClick handler deal with selection
+              // Just prepare for potential dragging with current selection
+              const currentSelection = selectedBoxes.includes(id) ? selectedBoxes : [id];
+              
+              // Use universal dragging system
+              startDrag(id, 'textbox', mouseX, mouseY, currentSelection, textBoxes);
             }}
             onResizeStart={handleResizeStart}
           />
