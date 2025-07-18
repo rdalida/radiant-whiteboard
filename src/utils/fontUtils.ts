@@ -71,3 +71,40 @@ export function calculateFontSizeToFit(
   
   return result;
 }
+
+export function measureTextDimensions(
+  text: string,
+  fontSize: number,
+  options: {
+    fontFamily?: string;
+    isBold?: boolean;
+    isItalic?: boolean;
+    lineHeight?: number;
+    padding?: number;
+  } = {}
+): { width: number; height: number } {
+  const {
+    fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    isBold = false,
+    isItalic = false,
+    lineHeight = 1.1,
+    padding = 16,
+  } = options;
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { width: 0, height: 0 };
+
+  const fontWeight = isBold ? 'bold' : 'normal';
+  const fontStyle = isItalic ? 'italic' : 'normal';
+  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+
+  const lines = text.split('\n');
+  const widths = lines.map(line => ctx.measureText(line).width);
+  const maxWidth = widths.length > 0 ? Math.max(...widths) : 0;
+
+  return {
+    width: maxWidth + padding,
+    height: lines.length * fontSize * lineHeight + padding,
+  };
+}

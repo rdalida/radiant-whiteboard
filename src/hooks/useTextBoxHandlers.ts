@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { calculateFontSizeToFit } from '../utils/fontUtils';
+import { measureTextDimensions } from '../utils/fontUtils';
 
 interface TextBox {
   id: string;
@@ -40,15 +40,15 @@ export function useTextBoxHandlers(setTextBoxes: (fn: any) => void, setSelectedB
     }
   }, [setSelectedBoxes]);
 
-  // Change text and adjust font size to always fit width
+  // Change text and expand box to fit new content without wrapping
   const handleTextChange = useCallback((id: string, newText: string) => {
     setTextBoxes((prev: TextBox[]) => prev.map(box => {
       if (box.id !== id) return box;
-      const newFont = calculateFontSizeToFit(newText, box.width, {
+      const dims = measureTextDimensions(newText, box.fontSize, {
         isBold: box.isBold,
-        isItalic: box.isItalic
+        isItalic: box.isItalic,
       });
-      return { ...box, text: newText, fontSize: newFont };
+      return { ...box, text: newText, width: dims.width, height: dims.height };
     }));
   }, [setTextBoxes]);
 

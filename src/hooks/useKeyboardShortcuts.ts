@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { measureTextDimensions } from '../utils/fontUtils';
 
 
 interface UseKeyboardShortcutsProps {
@@ -81,26 +82,30 @@ export function useKeyboardShortcuts({
       }
       if ((e.key === 't' || e.key === 'T') && !isInputFocused && !isEditingText) {
         const randomGradient = getRandomGradient();
-        setTextBoxes(boxes => [
-          ...boxes,
-          {
-            id: Date.now().toString(),
-            x: lastMousePos.x - 100,
-            y: lastMousePos.y - 20,
-            text: 'Text',
-            gradient: randomGradient.value,
-            isEditing: false,
-            fontSize: 32,
-            width: 200,
-            height: 40,
-            // Default formatting properties
-            isBold: false,
-            isItalic: false,
-            isUnderline: false,
-            textAlign: 'center',
-            color: undefined // Use gradient by default
-          }
-        ]);
+        setTextBoxes(boxes => {
+          const fontSize = 32;
+          const dims = measureTextDimensions('Text', fontSize);
+          return [
+            ...boxes,
+            {
+              id: Date.now().toString(),
+              x: lastMousePos.x - dims.width / 2,
+              y: lastMousePos.y - dims.height / 2,
+              text: 'Text',
+              gradient: randomGradient.value,
+              isEditing: false,
+              fontSize,
+              width: dims.width,
+              height: dims.height,
+              // Default formatting properties
+              isBold: false,
+              isItalic: false,
+              isUnderline: false,
+              textAlign: 'center',
+              color: undefined // Use gradient by default
+            }
+          ];
+        });
       }
       if ((e.key === 'd' || e.key === 'D') && !isInputFocused && !isEditingText) {
         e.preventDefault();

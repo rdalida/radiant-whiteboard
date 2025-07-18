@@ -8,7 +8,7 @@ import { useShapeHandlers } from './hooks/useShapeHandlers';
 import { useImageHandlers } from './hooks/useImageHandlers';
 import { useArrowHandlers } from './hooks/useArrowHandlers';
 import { useUniversalDragging } from './hooks/useUniversalDragging';
-import { calculateFontSizeToFit } from './utils/fontUtils';
+import { measureTextDimensions } from './utils/fontUtils';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
@@ -720,11 +720,11 @@ function App() {
     setTextBoxes(textBoxes.map(box => {
       if (box.id !== id) return box;
       const newBold = !box.isBold;
-      const newFontSize = calculateFontSizeToFit(box.text, box.width, {
+      const dims = measureTextDimensions(box.text, box.fontSize, {
         isBold: newBold,
         isItalic: box.isItalic
       });
-      return { ...box, isBold: newBold, fontSize: newFontSize };
+      return { ...box, isBold: newBold, width: dims.width, height: dims.height };
     }));
   };
 
@@ -732,11 +732,11 @@ function App() {
     setTextBoxes(textBoxes.map(box => {
       if (box.id !== id) return box;
       const newItalic = !box.isItalic;
-      const newFontSize = calculateFontSizeToFit(box.text, box.width, {
+      const dims = measureTextDimensions(box.text, box.fontSize, {
         isBold: box.isBold,
         isItalic: newItalic
       });
-      return { ...box, isItalic: newItalic, fontSize: newFontSize };
+      return { ...box, isItalic: newItalic, width: dims.width, height: dims.height };
     }));
   };
 
