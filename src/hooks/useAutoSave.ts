@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import { useFirebaseWhiteboard } from './useFirebaseWhiteboard';
 
 interface AutoSaveData {
@@ -9,6 +9,8 @@ interface AutoSaveData {
   mindMapNodes: any[];
 }
 
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 export const useAutoSave = (
   currentWhiteboardId: string | null,
   user: any,
@@ -16,10 +18,12 @@ export const useAutoSave = (
   title: string
 ) => {
   const { updateWhiteboard, saveWhiteboard } = useFirebaseWhiteboard();
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedDataRef = useRef<string>('');
   const currentDataRef = useRef<AutoSaveData>(data);
   const currentTitleRef = useRef<string>(title);
+  const savedIndicatorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Keep refs up to date
   currentDataRef.current = data;
@@ -37,14 +41,27 @@ export const useAutoSave = (
       return;
     }
 
+    setSaveStatus('saving');
+
     try {
       const success = await updateWhiteboard(currentWhiteboardId, currentData);
       if (success) {
         lastSavedDataRef.current = currentDataString;
+        setSaveStatus('saved');
+        
+        // Clear the "saved" indicator after 2 seconds
+        if (savedIndicatorTimeoutRef.current) {
+          clearTimeout(savedIndicatorTimeoutRef.current);
+        }
+        savedIndicatorTimeoutRef.current = setTimeout(() => {
+          setSaveStatus('idle');
+        }, 2000);
       } else {
+        setSaveStatus('error');
         console.error('Auto-save failed - updateWhiteboard returned false');
       }
     } catch (error) {
+      setSaveStatus('error');
       console.error('Auto-save error:', error);
     }
   }, [currentWhiteboardId, user, updateWhiteboard]); // Removed 'data' from dependencies
@@ -62,14 +79,28 @@ export const useAutoSave = (
 
     if (!hasContent) return;
 
+    setSaveStatus('saving');
+
     try {
       const whiteboardId = await saveWhiteboard(currentTitle, currentData);
       if (whiteboardId) {
+        setSaveStatus('saved');
+        
+        // Clear the "saved" indicator after 2 seconds
+        if (savedIndicatorTimeoutRef.current) {
+          clearTimeout(savedIndicatorTimeoutRef.current);
+        }
+        savedIndicatorTimeoutRef.current = setTimeout(() => {
+          setSaveStatus('idle');
+        }, 2000);
+        
         return whiteboardId;
       } else {
+        setSaveStatus('error');
         console.error('Failed to save new whiteboard - no ID returned');
       }
     } catch (error) {
+      setSaveStatus('error');
       console.error('Auto-save new whiteboard error:', error);
     }
     return null;
@@ -104,15 +135,23 @@ export const useAutoSave = (
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
+      }
     };
   }, []);
 
   return {
     triggerAutoSave,
+    saveStatus,
     cancelAutoSave: () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
+      }
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
+        savedIndicatorTimeoutRef.current = null;
       }
     }
   };

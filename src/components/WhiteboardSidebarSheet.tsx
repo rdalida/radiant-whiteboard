@@ -38,15 +38,24 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
 
+  // Load whiteboards when sidebar opens and user is available
+  useEffect(() => {
+    if (open && user) {
+      loadWhiteboards();
+    }
+  }, [open, user]);
+
   useEffect(() => {
     if (user) {
       loadWhiteboards();
+    } else {
+      setWhiteboards([]);
     }
   }, [user]);
 
   // Refresh whiteboards when refreshTrigger changes
   useEffect(() => {
-    if (user && refreshTrigger) {
+    if (user && refreshTrigger && refreshTrigger > 0) {
       loadWhiteboards();
     }
   }, [user, refreshTrigger]);
@@ -103,8 +112,8 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
         <Button
           variant="outline"
           size="sm"
-          className="fixed left-4 top-28 z-30 bg-white/90 backdrop-blur-sm border-gray-300 hover:bg-gray-50 shadow-md"
-          title="Open whiteboard menu"
+          className="fixed left-4 top-28 z-50 bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-lg"
+          title="Open whiteboard menu (Press B to toggle)"
         >
           <Menu className="w-4 h-4 mr-2" />
           Whiteboards

@@ -61,6 +61,7 @@ interface Shape {
 import { gradients } from './gradients';
 import { WhiteboardData, useFirebaseWhiteboard } from './hooks/useFirebaseWhiteboard';
 import WhiteboardSidebarSheet from './components/WhiteboardSidebarSheet';
+import AuthModal from './components/AuthModal';
 
 function App() {
   const { user, loading: authLoading, error: authError } = useFirebaseAuth();
@@ -70,6 +71,7 @@ function App() {
   const [currentWhiteboardTitle, setCurrentWhiteboardTitle] = useState<string>('New whiteboard');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   
   const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -118,7 +120,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   const whiteboardRef = useRef<HTMLDivElement>(null);
   
   // Auto-save hook
-  const { triggerAutoSave } = useAutoSave(
+  const { triggerAutoSave, saveStatus } = useAutoSave(
     currentWhiteboardId,
     user,
     {
@@ -746,6 +748,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       <Header 
         currentWhiteboardTitle={currentWhiteboardTitle}
         onTitleChange={handleTitleChange}
+        onShowAuthModal={() => setShowAuthModal(true)}
+        saveStatus={saveStatus}
       />
 
       {/* Floating Toolbar */}
@@ -1122,6 +1126,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         </div>
       </div>
 
+      {/* Auth Modal - rendered at the top level to cover entire viewport */}
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
     </div>
   );
 }

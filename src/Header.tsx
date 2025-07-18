@@ -2,18 +2,20 @@
 import React, { useState } from 'react';
 import { useFirebaseAuth } from './hooks/useAuth';
 import { Edit2, Check, X, User, LogOut } from 'lucide-react';
-import AuthModal from './components/AuthModal';
+import SaveStatusIndicator from './components/SaveStatusIndicator';
+import { SaveStatus } from './hooks/useAutoSave';
 
 interface HeaderProps {
   currentWhiteboardTitle: string;
   onTitleChange: (newTitle: string) => void;
+  onShowAuthModal: () => void;
+  saveStatus: SaveStatus;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }) => {
+const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange, onShowAuthModal, saveStatus }) => {
   const { user, logout } = useFirebaseAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(currentWhiteboardTitle);
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleStartEdit = () => {
     setEditTitle(currentWhiteboardTitle);
@@ -62,47 +64,52 @@ const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }
         
         {/* Centered Title Section */}
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center space-x-2">
-            {isEditing ? (
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="text-xl font-semibold bg-transparent border-b-2 border-blue-500 focus:outline-none focus:border-blue-600 text-gray-800 px-1"
-                  autoFocus
-                  onBlur={handleSaveEdit}
-                />
-                <button
-                  onClick={handleSaveEdit}
-                  className="text-green-600 hover:text-green-700 p-1"
-                  title="Save"
-                >
-                  <Check size={16} />
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="text-gray-400 hover:text-gray-600 p-1"
-                  title="Cancel"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2 group">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  {currentWhiteboardTitle}
-                </h2>
-                <button
-                  onClick={handleStartEdit}
-                  className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                  title="Edit title"
-                >
-                  <Edit2 size={16} />
-                </button>
-              </div>
-            )}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="text-xl font-semibold bg-transparent border-b-2 border-blue-500 focus:outline-none focus:border-blue-600 text-gray-800 px-1"
+                    autoFocus
+                    onBlur={handleSaveEdit}
+                  />
+                  <button
+                    onClick={handleSaveEdit}
+                    className="text-green-600 hover:text-green-700 p-1"
+                    title="Save"
+                  >
+                    <Check size={16} />
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-gray-400 hover:text-gray-600 p-1"
+                    title="Cancel"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 group">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {currentWhiteboardTitle}
+                  </h2>
+                  <button
+                    onClick={handleStartEdit}
+                    className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                    title="Edit title"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Save Status Indicator */}
+            <SaveStatusIndicator status={saveStatus} isSignedIn={!!user} />
           </div>
         </div>
         
@@ -135,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }
             </div>
           ) : (
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={onShowAuthModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
             >
               Sign in
@@ -143,10 +150,6 @@ const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }
           )}
         </div>
       </div>
-      
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
     </div>
   );
 };
