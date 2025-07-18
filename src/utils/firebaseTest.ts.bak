@@ -1,0 +1,51 @@
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+// Simple test function to check if data persists in Firebase
+export const testFirebasePersistence = async (whiteboardId: string) => {
+  console.log('Testing Firebase persistence for whiteboard:', whiteboardId);
+  
+  try {
+    // Read the document multiple times with delays to see if data disappears
+    const docRef = doc(db, 'whiteboards', whiteboardId);
+    
+    console.log('Reading document immediately...');
+    const snap1 = await getDoc(docRef);
+    if (snap1.exists()) {
+      const data1 = snap1.data();
+      console.log('Immediate read - textBoxes:', data1.textBoxes?.length || 0);
+    } else {
+      console.log('Immediate read - Document does not exist!');
+    }
+    
+    // Wait 2 seconds
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log('Reading document after 2 seconds...');
+    const snap2 = await getDoc(docRef);
+    if (snap2.exists()) {
+      const data2 = snap2.data();
+      console.log('After 2s read - textBoxes:', data2.textBoxes?.length || 0);
+    } else {
+      console.log('After 2s read - Document does not exist!');
+    }
+    
+    // Wait 5 seconds
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    console.log('Reading document after 7 seconds total...');
+    const snap3 = await getDoc(docRef);
+    if (snap3.exists()) {
+      const data3 = snap3.data();
+      console.log('After 7s read - textBoxes:', data3.textBoxes?.length || 0);
+    } else {
+      console.log('After 7s read - Document does not exist!');
+    }
+    
+  } catch (error) {
+    console.error('Error testing Firebase persistence:', error);
+  }
+};
+
+// Call this function from the browser console to test
+(window as any).testFirebasePersistence = testFirebasePersistence;

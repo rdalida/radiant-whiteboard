@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { 
   collection, 
   doc, 
@@ -33,7 +33,7 @@ export const useFirebaseWhiteboard = () => {
   const { user } = useUser();
 
   // Save a whiteboard
-  const saveWhiteboard = async (
+  const saveWhiteboard = useCallback(async (
     title: string,
     whiteboardData: {
       textBoxes: any[];
@@ -47,8 +47,6 @@ export const useFirebaseWhiteboard = () => {
     setError(null);
     
     try {
-      console.log('Attempting to save whiteboard:', { title, dataSize: Object.keys(whiteboardData).length });
-      
       const now = Timestamp.now();
       const docRef = await addDoc(collection(db, 'whiteboards'), {
         title,
@@ -59,7 +57,6 @@ export const useFirebaseWhiteboard = () => {
         updatedAt: now
       });
       
-      console.log('Whiteboard saved successfully with ID:', docRef.id);
       setLoading(false);
       return docRef.id;
     } catch (err) {
@@ -75,10 +72,10 @@ export const useFirebaseWhiteboard = () => {
       setLoading(false);
       return null;
     }
-  };
+  }, [user]);
 
   // Update an existing whiteboard
-  const updateWhiteboard = async (
+  const updateWhiteboard = useCallback(async (
     id: string,
     whiteboardData: {
       textBoxes: any[];
@@ -92,24 +89,42 @@ export const useFirebaseWhiteboard = () => {
     setError(null);
     
     try {
-      const docRef = doc(db, 'whiteboards', id);
-      await updateDoc(docRef, {
-        ...whiteboardData,
+      const updateData = {
+        textBoxes: whiteboardData.textBoxes,
+        shapes: whiteboardData.shapes,
+        images: whiteboardData.images,
+        drawingPaths: whiteboardData.drawingPaths,
+        mindMapNodes: whiteboardData.mindMapNodes,
         updatedAt: Timestamp.now()
-      });
+      };
+      
+      const docRef = doc(db, 'whiteboards', id);
+      await updateDoc(docRef, updateData);
       
       setLoading(false);
       return true;
     } catch (err) {
       console.error('Error updating whiteboard:', err);
+      
+      // More detailed error logging
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+      }
+      
+      // Check if it's a Firebase error
+      if (err && typeof err === 'object' && 'code' in err) {
+        console.error('Firebase error code:', (err as any).code);
+      }
+      
       setError('Failed to update whiteboard');
       setLoading(false);
       return false;
     }
-  };
+  }, []);
 
   // Update whiteboard title
-  const updateWhiteboardTitle = async (
+  const updateWhiteboardTitle = useCallback(async (
     id: string,
     title: string
   ): Promise<boolean> => {
@@ -131,10 +146,10 @@ export const useFirebaseWhiteboard = () => {
       setLoading(false);
       return false;
     }
-  };
+  }, []);
 
   // Load a specific whiteboard
-  const loadWhiteboard = async (id: string): Promise<WhiteboardData | null> => {
+  const loadWhiteboard = useCallback(async (id: string): Promise<WhiteboardData | null> => {
     setLoading(true);
     setError(null);
     
@@ -157,7 +172,7 @@ export const useFirebaseWhiteboard = () => {
       setLoading(false);
       return null;
     }
-  };
+  }, []);
 
   // Get all whiteboards (optionally filtered by user)
   const getAllWhiteboards = async (userId?: string): Promise<WhiteboardData[]> => {
@@ -210,12 +225,12 @@ export const useFirebaseWhiteboard = () => {
   };
 
   return {
-    saveWhiteboard,
-    updateWhiteboard,
-    updateWhiteboardTitle,
-    loadWhiteboard,
-    getAllWhiteboards,
-    deleteWhiteboard,
+    saveWhiteboard: useCallback(saveWhiteboard, [user]),
+    updateWhiteboard: useCallback(updateWhiteboard, []),
+    updateWhiteboardTitle: useCallback(updateWhiteboardTitle, []),
+    loadWhiteboard: useCallback(loadWhiteboard, []),
+    getAllWhiteboards: useCallback(getAllWhiteboards, []),
+    deleteWhiteboard: useCallback(deleteWhiteboard, []),
     loading,
     error
   };

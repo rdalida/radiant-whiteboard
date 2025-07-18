@@ -12,6 +12,7 @@ import ImageElement from './ImageElement';
 import ShapeElement from './ShapeElement';
 import MindMapNode, { MindMapNodeData } from './MindMapNode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useAutoSave } from './hooks/useAutoSave';
 export interface WhiteboardImage {
   id: string;
   x: number;
@@ -60,10 +61,12 @@ import { gradients } from './gradients';
 import { WhiteboardData, useFirebaseWhiteboard } from './hooks/useFirebaseWhiteboard';
 import WhiteboardSidebarSheet from './components/WhiteboardSidebarSheet';
 import { useUser } from '@clerk/clerk-react';
+import './utils/firebaseTest'; // Import the test utility
 
 function App() {
   const { user } = useUser();
-  const { updateWhiteboard, saveWhiteboard, updateWhiteboardTitle } = useFirebaseWhiteboard();
+  const { updateWhiteboardTitle } = useFirebaseWhiteboard();
+  
   const [currentWhiteboardId, setCurrentWhiteboardId] = useState<string | null>(null);
   const [currentWhiteboardTitle, setCurrentWhiteboardTitle] = useState<string>('New whiteboard');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
@@ -114,6 +117,47 @@ const [dragShapeStart, setDragShapeStart] = useState<{ x: number, y: number, off
 const [draggingBox, setDraggingBox] = useState<string | null>(null);
 const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
   const whiteboardRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-save hook
+  const { triggerAutoSave } = useAutoSave(
+    currentWhiteboardId,
+    user,
+    {
+      textBoxes,
+      shapes,
+      images,
+      drawingPaths,
+      mindMapNodes,
+    },
+    currentWhiteboardTitle
+  );
+
+  // Create a stable reference for the data to prevent unnecessary re-renders
+  const currentDataString = JSON.stringify({
+    textBoxes,
+    shapes,
+    images,
+    drawingPaths,
+    mindMapNodes,
+  });
+
+  // Trigger auto-save when content changes
+  React.useEffect(() => {
+    if (currentWhiteboardId && user) {
+      // Existing whiteboard - trigger auto-save
+      triggerAutoSave(false);
+    } else if (!currentWhiteboardId && user && 
+               (textBoxes.length > 0 || shapes.length > 0 || images.length > 0 || 
+                drawingPaths.length > 0 || mindMapNodes.length > 0)) {
+      // New whiteboard with content - trigger auto-save
+      triggerAutoSave(true).then((newId) => {
+        if (newId) {
+          setCurrentWhiteboardId(newId);
+          setRefreshTrigger(prev => prev + 1);
+        }
+      });
+    }
+  }, [currentDataString, currentWhiteboardId, user, triggerAutoSave]); // Use data string instead of individual arrays
 
   // Handle paste event for images
   React.useEffect(() => {
@@ -153,53 +197,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [lastMousePos]);
-
-  // Auto-save whiteboard content when it changes
-  React.useEffect(() => {
-    if (currentWhiteboardId && user) {
-      const saveTimeout = setTimeout(async () => {
-        try {
-          await updateWhiteboard(currentWhiteboardId, {
-            textBoxes,
-            shapes,
-            images,
-            drawingPaths,
-            mindMapNodes,
-          });
-        } catch (error) {
-          console.error('Auto-save error:', error);
-        }
-      }, 2000); // Auto-save after 2 seconds of inactivity
-      
-      return () => clearTimeout(saveTimeout);
-    }
-  }, [textBoxes, shapes, images, drawingPaths, mindMapNodes, currentWhiteboardId, user, updateWhiteboard]);
-
-  // Auto-save new whiteboard when content is added
-  React.useEffect(() => {
-    if (!currentWhiteboardId && user && (textBoxes.length > 0 || shapes.length > 0 || images.length > 0 || drawingPaths.length > 0 || mindMapNodes.length > 0)) {
-      const saveTimeout = setTimeout(async () => {
-        try {
-          const whiteboardId = await saveWhiteboard(currentWhiteboardTitle, {
-            textBoxes,
-            shapes,
-            images,
-            drawingPaths,
-            mindMapNodes,
-          });
-          
-          if (whiteboardId) {
-            setCurrentWhiteboardId(whiteboardId);
-            setRefreshTrigger(prev => prev + 1);
-          }
-        } catch (error) {
-          console.error('Auto-save new whiteboard error:', error);
-        }
-      }, 3000); // Auto-save after 3 seconds of content being added
-      
-      return () => clearTimeout(saveTimeout);
-    }
-  }, [textBoxes, shapes, images, drawingPaths, mindMapNodes, currentWhiteboardId, user, currentWhiteboardTitle, saveWhiteboard]);
 
   // Restore resize for text box
   const handleResizeStart = (e: React.MouseEvent, id: string) => {
@@ -691,33 +688,16 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   const handleTitleChange = async (newTitle: string) => {
     setCurrentWhiteboardTitle(newTitle);
     
-    // If we don't have a whiteboard ID, create a new one
-    if (!currentWhiteboardId && user) {
+    // If we have an existing whiteboard, just update the title
+    if (currentWhiteboardId && user) {
       try {
-        const whiteboardId = await saveWhiteboard(newTitle, {
-          textBoxes,
-          shapes,
-          images,
-          drawingPaths,
-          mindMapNodes,
-        });
-        
-        if (whiteboardId) {
-          setCurrentWhiteboardId(whiteboardId);
-          setRefreshTrigger(prev => prev + 1);
-        }
-      } catch (error) {
-        console.error('Error creating new whiteboard:', error);
-      }
-    } else if (currentWhiteboardId && user) {
-      try {
-        // Update the title in Firebase
         await updateWhiteboardTitle(currentWhiteboardId, newTitle);
         setRefreshTrigger(prev => prev + 1);
       } catch (error) {
         console.error('Error updating whiteboard title:', error);
       }
     }
+    // For new whiteboards, the title will be used when auto-save creates the whiteboard
   };
 
   return (
