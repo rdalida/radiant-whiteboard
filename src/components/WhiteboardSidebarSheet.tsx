@@ -16,19 +16,27 @@ interface WhiteboardSidebarSheetProps {
   onLoadWhiteboard: (data: WhiteboardData) => void;
   currentWhiteboardId?: string | null;
   refreshTrigger?: number; // Add refresh trigger
+  open?: boolean; // Add external open control
+  onOpenChange?: (open: boolean) => void; // Add external open change handler
 }
 
 const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   onNewWhiteboard,
   onLoadWhiteboard,
   currentWhiteboardId,
-  refreshTrigger
+  refreshTrigger,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange
 }) => {
   const { user } = useUser();
   const [whiteboards, setWhiteboards] = useState<WhiteboardData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const { getAllWhiteboards, deleteWhiteboard } = useFirebaseWhiteboard();
+
+  // Use external open state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
 
   useEffect(() => {
     if (user) {

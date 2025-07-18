@@ -67,6 +67,7 @@ function App() {
   const [currentWhiteboardId, setCurrentWhiteboardId] = useState<string | null>(null);
   const [currentWhiteboardTitle, setCurrentWhiteboardTitle] = useState<string>('New whiteboard');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   
   const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -625,7 +626,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     addMindMapNode,
     addSiblingNode,
     addChildNode,
-    handleMindMapNodeDelete
+    handleMindMapNodeDelete,
+    setSidebarOpen
   });
 
   React.useEffect(() => {
@@ -741,6 +743,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           onLoadWhiteboard={handleLoadWhiteboard}
           currentWhiteboardId={currentWhiteboardId}
           refreshTrigger={refreshTrigger}
+          open={sidebarOpen}
+          onOpenChange={setSidebarOpen}
         />
       )}
 

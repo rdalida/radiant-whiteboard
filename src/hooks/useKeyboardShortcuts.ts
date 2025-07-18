@@ -23,6 +23,8 @@ interface UseKeyboardShortcutsProps {
   addSiblingNode: (currentNodeId: string) => void;
   addChildNode: (currentNodeId: string) => void;
   handleMindMapNodeDelete: (id: string) => void;
+  // Sidebar props
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function useKeyboardShortcuts({
@@ -45,7 +47,8 @@ export function useKeyboardShortcuts({
   addMindMapNode,
   addSiblingNode,
   addChildNode,
-  handleMindMapNodeDelete
+  handleMindMapNodeDelete,
+  setSidebarOpen
 }: UseKeyboardShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,6 +61,9 @@ export function useKeyboardShortcuts({
           setActiveTool('diamond');
         } else if (e.key === 'r' || e.key === 'R') {
           setActiveTool('pen');
+        } else if (e.key === 'b' || e.key === 'B') {
+          // Toggle sidebar
+          setSidebarOpen(prev => !prev);
         }
       }
       if ((e.key === 't' || e.key === 'T') && document.activeElement?.tagName !== 'INPUT') {

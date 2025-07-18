@@ -12,15 +12,26 @@ The whiteboard now has an editable title feature in the Header component, allowi
 - Save with Enter key or clicking the checkmark
 - Cancel with Escape key or clicking the X
 
-### 2. **Auto-saving**
+### 2. **Keyboard Shortcuts**
+- **B key**: Toggle sidebar open/close
+- **T key**: Add text box
+- **D key**: Add shape
+- **Q key**: Rectangle tool
+- **W key**: Circle tool
+- **E key**: Diamond tool
+- **R key**: Pen tool
+- **Delete/Backspace**: Delete selected elements
+
+### 3. **Auto-saving**
 - **New whiteboards**: Automatically saved to Firebase when content is added (3-second delay)
 - **Existing whiteboards**: Content auto-saved when modified (2-second delay)
 - **Title changes**: Immediately saved when title is updated
 
-### 3. **Sidebar Integration**
+### 4. **Sidebar Integration**
 - Sidebar automatically refreshes when whiteboard titles are changed
 - Shows the updated title in the whiteboard list
 - Maintains proper sorting by last updated
+- Can be toggled with keyboard shortcut "B"
 
 ## Technical Implementation
 
