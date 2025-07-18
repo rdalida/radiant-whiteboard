@@ -42,6 +42,9 @@ const TextBox: React.FC<TextBoxProps> = ({
     fontSize: `${fontSize}px`,
     whiteSpace: 'pre' as const,
     overflow: 'hidden' as const,
+    textOverflow: 'clip' as const,
+    wordBreak: 'keep-all' as const,
+    lineHeight: '1.1',
     color: color || 'transparent', // Use color if provided, otherwise transparent for gradient
   };
 
@@ -58,8 +61,14 @@ const TextBox: React.FC<TextBoxProps> = ({
           onChange={e => onTextChange(id, e.target.value)}
           onBlur={() => onTextBlur(id)}
           wrap="off"
-          className="w-full h-full bg-transparent border-2 border-dashed border-gray-400 rounded px-2 py-1 font-bold focus:outline-none focus:border-blue-500 resize-none"
-          style={{ fontSize: `${fontSize}px`, whiteSpace: 'pre' }}
+          className={`w-full h-full bg-transparent border-2 border-dashed border-gray-400 rounded px-2 py-1 focus:outline-none focus:border-blue-500 resize-none ${isBold ? 'font-bold' : 'font-normal'} ${isItalic ? 'italic' : ''}`}
+          style={{ 
+            fontSize: `${fontSize}px`, 
+            whiteSpace: 'pre',
+            lineHeight: '1.1',
+            wordBreak: 'keep-all',
+            overflow: 'hidden'
+          }}
           autoFocus
         />
       ) : (

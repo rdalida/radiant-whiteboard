@@ -19,7 +19,7 @@ interface TextBox {
   color?: string;
 }
 
-export function useTextBoxHandlers(textBoxes: TextBox[], setTextBoxes: (fn: any) => void, setSelectedBoxes: (fn: any) => void) {
+export function useTextBoxHandlers(setTextBoxes: (fn: any) => void, setSelectedBoxes: (fn: any) => void) {
   // Double click to edit
   const handleTextDoubleClick = useCallback((id: string) => {
     setTextBoxes((prev: TextBox[]) => prev.map(box => 
@@ -44,7 +44,10 @@ export function useTextBoxHandlers(textBoxes: TextBox[], setTextBoxes: (fn: any)
   const handleTextChange = useCallback((id: string, newText: string) => {
     setTextBoxes((prev: TextBox[]) => prev.map(box => {
       if (box.id !== id) return box;
-      const newFont = calculateFontSizeToFit(newText, box.width);
+      const newFont = calculateFontSizeToFit(newText, box.width, {
+        isBold: box.isBold,
+        isItalic: box.isItalic
+      });
       return { ...box, text: newText, fontSize: newFont };
     }));
   }, [setTextBoxes]);

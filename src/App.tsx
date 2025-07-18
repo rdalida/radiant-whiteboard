@@ -8,6 +8,7 @@ import { useShapeHandlers } from './hooks/useShapeHandlers';
 import { useImageHandlers } from './hooks/useImageHandlers';
 import { useArrowHandlers } from './hooks/useArrowHandlers';
 import { useUniversalDragging } from './hooks/useUniversalDragging';
+import { calculateFontSizeToFit } from './utils/fontUtils';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
@@ -330,7 +331,7 @@ function App() {
     // handleTextClick, // Now handled in onMouseUp
     handleTextChange,
     handleTextBlur
-  } = useTextBoxHandlers(textBoxes, setTextBoxes, setSelectedBoxes);
+  } = useTextBoxHandlers(setTextBoxes, setSelectedBoxes);
 
   // Refactored: useShapeHandlers for shape events
   const {
@@ -716,15 +717,27 @@ function App() {
 
   // Text formatting handlers for TextBox
   const handleTextBoxToggleBold = (id: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, isBold: !box.isBold } : box
-    ));
+    setTextBoxes(textBoxes.map(box => {
+      if (box.id !== id) return box;
+      const newBold = !box.isBold;
+      const newFontSize = calculateFontSizeToFit(box.text, box.width, {
+        isBold: newBold,
+        isItalic: box.isItalic
+      });
+      return { ...box, isBold: newBold, fontSize: newFontSize };
+    }));
   };
 
   const handleTextBoxToggleItalic = (id: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, isItalic: !box.isItalic } : box
-    ));
+    setTextBoxes(textBoxes.map(box => {
+      if (box.id !== id) return box;
+      const newItalic = !box.isItalic;
+      const newFontSize = calculateFontSizeToFit(box.text, box.width, {
+        isBold: box.isBold,
+        isItalic: newItalic
+      });
+      return { ...box, isItalic: newItalic, fontSize: newFontSize };
+    }));
   };
 
   const handleTextBoxToggleUnderline = (id: string) => {

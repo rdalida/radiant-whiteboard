@@ -144,7 +144,7 @@ export function handleWhiteboardMouseMove({
   if (resizingBox) {
     const deltaX = e.clientX - resizeStart.x;
     const deltaY = e.clientY - resizeStart.y;
-    const newWidth = Math.max(100, resizeStart.width + deltaX);
+    const newWidth = Math.max(120, resizeStart.width + deltaX); // Increased minimum width
     const newHeight = Math.max(30, resizeStart.height + deltaY);
     setTextBoxesResize((textBoxes: any[]) =>
       textBoxes.map((box: any) =>
@@ -153,7 +153,10 @@ export function handleWhiteboardMouseMove({
               ...box,
               width: newWidth,
               height: newHeight,
-              fontSize: calculateFontSizeToFit(box.text, newWidth),
+              fontSize: calculateFontSizeToFit(box.text, newWidth, {
+                isBold: box.isBold,
+                isItalic: box.isItalic
+              }),
             }
           : box
       )
