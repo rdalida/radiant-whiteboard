@@ -79,7 +79,13 @@ export function useKeyboardShortcuts({
             isEditing: false,
             fontSize: 32,
             width: 200,
-            height: 40
+            height: 40,
+            // Default formatting properties
+            isBold: false,
+            isItalic: false,
+            isUnderline: false,
+            textAlign: 'center',
+            color: undefined // Use gradient by default
           }
         ]);
       }
@@ -97,6 +103,12 @@ export function useKeyboardShortcuts({
             gradient: 'bg-gray-200',
             text: '',
             isEditing: true,
+            // Default formatting properties for shape text
+            isBold: false,
+            isItalic: false,
+            isUnderline: false,
+            textAlign: 'center',
+            textColor: undefined // Use default text color
           }
         ]);
       }

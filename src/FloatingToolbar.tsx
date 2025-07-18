@@ -1,15 +1,48 @@
-import React from 'react';
-import { Palette, Trash2, Copy, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Palette, 
+  Trash2, 
+  Copy, 
+  RotateCcw, 
+  Bold, 
+  Italic, 
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Type,
+  Plus,
+  Minus,
+  ChevronDown
+} from 'lucide-react';
 
 interface FloatingToolbarProps {
   x: number;
   y: number;
   width: number;
   elementType: 'shape' | 'textbox' | 'image';
+  // Existing actions
   onChangeGradient?: () => void;
   onDelete: () => void;
   onCopy?: () => void;
   onRotate?: () => void;
+  
+  // Text formatting (for textbox and shape with text)
+  textStyle?: {
+    isBold?: boolean;
+    isItalic?: boolean;
+    isUnderline?: boolean;
+    fontSize?: number;
+    textAlign?: 'left' | 'center' | 'right';
+    color?: string;
+  };
+  onToggleBold?: () => void;
+  onToggleItalic?: () => void;
+  onToggleUnderline?: () => void;
+  onFontSizeIncrease?: () => void;
+  onFontSizeDecrease?: () => void;
+  onTextAlignChange?: (align: 'left' | 'center' | 'right') => void;
+  onColorChange?: (color: string) => void;
 }
 
 const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
@@ -21,20 +54,225 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   onDelete,
   onCopy,
   onRotate,
+  textStyle,
+  onToggleBold,
+  onToggleItalic,
+  onToggleUnderline,
+  onFontSizeIncrease,
+  onFontSizeDecrease,
+  onTextAlignChange,
+  onColorChange,
 }) => {
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+  
+  // Close color picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) {
+        setShowColorPicker(false);
+      }
+    };
+
+    if (showColorPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showColorPicker]);
+  
   // Position the toolbar above the element, centered
   const toolbarX = x + width / 2;
-  const toolbarY = y - 50; // 50px above the element
+  const toolbarY = y - 60; // 60px above the element to accommodate larger toolbar
+  
+  const hasTextFormatting = elementType === 'textbox' || elementType === 'shape';
+  
+  // Common color palette
+  const colors = [
+    '#000000', '#374151', '#6B7280', '#9CA3AF', '#D1D5DB', '#F3F4F6',
+    '#DC2626', '#EA580C', '#D97706', '#CA8A04', '#65A30D', '#16A34A',
+    '#0891B2', '#0284C7', '#2563EB', '#4F46E5', '#7C3AED', '#C026D3',
+    '#DB2777', '#E11D48'
+  ];
 
   return (
     <div
-      className="absolute z-30 bg-white rounded-lg shadow-lg border border-gray-200 px-2 py-1 flex items-center space-x-1"
+      className="absolute z-30 bg-white rounded-lg shadow-lg border border-gray-200 px-2 py-1.5 flex items-center space-x-1"
       style={{
         left: toolbarX,
         top: toolbarY,
         transform: 'translateX(-50%)', // Center horizontally
       }}
     >
+      {/* Text Formatting Controls - only for textbox and shapes */}
+      {hasTextFormatting && (
+        <>
+          {/* Font Size Controls */}
+          <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onFontSizeDecrease?.();
+              }}
+              className="p-1 rounded hover:bg-gray-100 transition-colors"
+              title="Decrease font size"
+            >
+              <Minus className="w-3 h-3 text-gray-600" />
+            </button>
+            <span className="mx-2 text-xs text-gray-600 min-w-[2rem] text-center">
+              {textStyle?.fontSize || 16}px
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onFontSizeIncrease?.();
+              }}
+              className="p-1 rounded hover:bg-gray-100 transition-colors"
+              title="Increase font size"
+            >
+              <Plus className="w-3 h-3 text-gray-600" />
+            </button>
+          </div>
+
+          {/* Text Style Controls */}
+          <div className="flex items-center border-r border-gray-200 pr-2 mr-2 space-x-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBold?.();
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                textStyle?.isBold 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Bold"
+            >
+              <Bold className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleItalic?.();
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                textStyle?.isItalic 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Italic"
+            >
+              <Italic className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleUnderline?.();
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                textStyle?.isUnderline 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Underline"
+            >
+              <Underline className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Text Alignment */}
+          <div className="flex items-center border-r border-gray-200 pr-2 mr-2 space-x-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTextAlignChange?.('left');
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                textStyle?.textAlign === 'left' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Align left"
+            >
+              <AlignLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTextAlignChange?.('center');
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                textStyle?.textAlign === 'center' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Align center"
+            >
+              <AlignCenter className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTextAlignChange?.('right');
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                textStyle?.textAlign === 'right' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Align right"
+            >
+              <AlignRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Color Picker */}
+          <div className="relative border-r border-gray-200 pr-2 mr-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowColorPicker(!showColorPicker);
+              }}
+              className="p-1.5 rounded hover:bg-gray-100 transition-colors flex items-center"
+              title="Text color"
+            >
+              <div className="flex items-center">
+                <Type className="w-4 h-4 text-gray-600" />
+                <div 
+                  className="w-3 h-1 ml-1 rounded" 
+                  style={{ backgroundColor: textStyle?.color || '#000000' }}
+                />
+                <ChevronDown className="w-3 h-3 ml-1 text-gray-400" />
+              </div>
+            </button>
+            
+            {/* Color Palette Dropdown */}
+            {showColorPicker && (
+              <div 
+                ref={colorPickerRef}
+                className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-40"
+              >
+                <div className="grid grid-cols-10 gap-1 w-48">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onColorChange?.(color);
+                        setShowColorPicker(false);
+                      }}
+                      className={`w-5 h-5 rounded border-2 hover:scale-110 transition-transform ${
+                        textStyle?.color === color ? 'border-blue-500' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
       {/* Change Gradient/Color - only for shapes and textboxes */}
       {(elementType === 'shape' || elementType === 'textbox') && onChangeGradient && (
         <button

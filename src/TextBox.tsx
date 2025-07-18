@@ -11,6 +11,12 @@ interface TextBoxProps {
   isEditing: boolean;
   fontSize: number;
   selected: boolean;
+  // Text formatting properties
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  color?: string;
   onTextChange: (id: string, newText: string) => void;
   onTextBlur: (id: string) => void;
   onTextClick: (id: string, e: React.MouseEvent) => void;
@@ -21,8 +27,32 @@ interface TextBoxProps {
 
 const TextBox: React.FC<TextBoxProps> = ({
   id, x, y, width, height, text, gradient, isEditing, fontSize, selected,
+  isBold, isItalic, isUnderline, textAlign, color,
   onTextChange, onTextBlur, onTextClick, onTextDoubleClick, onMouseDown, onResizeStart
 }) => {
+  // Build dynamic style classes and styles
+  const textClasses = [
+    'cursor-move select-none w-full h-full flex items-center leading-tight',
+    isBold ? 'font-bold' : 'font-normal',
+    isItalic ? 'italic' : '',
+    isUnderline ? 'underline' : ''
+  ].filter(Boolean).join(' ');
+
+  const alignmentClasses = {
+    left: 'justify-start text-left',
+    center: 'justify-center text-center', 
+    right: 'justify-end text-right'
+  };
+
+  const textStyle = {
+    fontSize: `${fontSize}px`,
+    wordWrap: 'break-word' as const,
+    overflow: 'hidden' as const,
+    color: color || 'transparent', // Use color if provided, otherwise transparent for gradient
+  };
+
+  // If color is specified, don't use gradient classes
+  const gradientClasses = color ? '' : `${gradient} bg-clip-text text-transparent`;
   return (
     <div
       className={`absolute${selected && !isEditing ? ' ring-2 ring-blue-400 z-20' : ''}`}
@@ -42,11 +72,11 @@ const TextBox: React.FC<TextBoxProps> = ({
       ) : (
         <div className="relative w-full h-full">
           <div
-            className={`font-bold ${gradient} bg-clip-text text-transparent cursor-move select-none w-full h-full flex items-center justify-center text-center leading-tight`}
+            className={`${textClasses} ${alignmentClasses[textAlign || 'center']} ${gradientClasses}`}
             onClick={e => onTextClick(id, e)}
             onDoubleClick={() => onTextDoubleClick(id)}
             onMouseDown={e => onMouseDown(e, id)}
-            style={{ fontSize: `${fontSize}px`, wordWrap: 'break-word', overflow: 'hidden' }}
+            style={textStyle}
             tabIndex={0}
           >
             {text}

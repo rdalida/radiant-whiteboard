@@ -11,6 +11,12 @@ interface ShapeElementProps {
     gradient: string;
     text: string;
     isEditing: boolean;
+    // Text formatting properties
+    isBold?: boolean;
+    isItalic?: boolean;
+    isUnderline?: boolean;
+    textAlign?: 'left' | 'center' | 'right';
+    textColor?: string;
   };
   selected: boolean;
   onClick: (e: React.MouseEvent, id: string) => void;
@@ -52,8 +58,29 @@ const ShapeElement: React.FC<ShapeElementProps> = ({
           />
         ) : (
           <div
-            className={`absolute w-full h-full flex items-center justify-center select-none px-2 py-1 font-bold text-gray-700 ${shape.type === 'rectangle' ? 'rounded-lg' : ''} ${shape.type === 'circle' ? 'rounded-full' : ''} ${shape.type === 'diamond' ? 'transform rotate-45' : ''} ${shape.gradient}`}
-            style={{ fontSize: `${Math.max(12, Math.min(72, shape.height * 0.25))}px`, textAlign: 'center', overflow: 'hidden', wordBreak: 'break-word' }}
+            className={`absolute w-full h-full flex items-center select-none px-2 py-1 ${
+              shape.isBold ? 'font-bold' : 'font-normal'
+            } ${
+              shape.isItalic ? 'italic' : ''
+            } ${
+              shape.isUnderline ? 'underline' : ''
+            } ${
+              shape.textAlign === 'left' ? 'justify-start text-left' : 
+              shape.textAlign === 'right' ? 'justify-end text-right' : 
+              'justify-center text-center'
+            } ${
+              shape.type === 'rectangle' ? 'rounded-lg' : ''
+            } ${
+              shape.type === 'circle' ? 'rounded-full' : ''
+            } ${
+              shape.type === 'diamond' ? 'transform rotate-45' : ''
+            } ${shape.gradient}`}
+            style={{ 
+              fontSize: `${Math.max(12, Math.min(72, shape.height * 0.25))}px`, 
+              overflow: 'hidden', 
+              wordBreak: 'break-word',
+              color: shape.textColor || '#374151' // Default text color
+            }}
             onDoubleClick={() => onTextDoubleClick(shape.id)}
           >
             {shape.text}

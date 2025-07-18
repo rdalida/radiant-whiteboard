@@ -10,6 +10,12 @@ interface TextBox {
   fontSize: number;
   width: number;
   height: number;
+  // Text formatting properties
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  color?: string;
 }
 
 export function useTextBoxHandlers(textBoxes: TextBox[], setTextBoxes: (fn: any) => void, setSelectedBoxes: (fn: any) => void) {

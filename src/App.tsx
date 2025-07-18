@@ -45,6 +45,12 @@ interface TextBox {
   fontSize: number;
   width: number;
   height: number;
+  // Text formatting properties
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  color?: string;
 }
 
 interface Shape {
@@ -57,6 +63,12 @@ interface Shape {
   gradient: string;
   text: string;
   isEditing: boolean;
+  // Text formatting properties for shape text
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  textColor?: string;
 }
 
 import { gradients } from './gradients';
@@ -666,6 +678,80 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     ));
   };
 
+  // Text formatting handlers for TextBox
+  const handleTextBoxToggleBold = (id: string) => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, isBold: !box.isBold } : box
+    ));
+  };
+
+  const handleTextBoxToggleItalic = (id: string) => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, isItalic: !box.isItalic } : box
+    ));
+  };
+
+  const handleTextBoxToggleUnderline = (id: string) => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, isUnderline: !box.isUnderline } : box
+    ));
+  };
+
+  const handleTextBoxFontSizeIncrease = (id: string) => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, fontSize: Math.min(box.fontSize + 2, 72) } : box
+    ));
+  };
+
+  const handleTextBoxFontSizeDecrease = (id: string) => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, fontSize: Math.max(box.fontSize - 2, 8) } : box
+    ));
+  };
+
+  const handleTextBoxTextAlignChange = (id: string, align: 'left' | 'center' | 'right') => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, textAlign: align } : box
+    ));
+  };
+
+  const handleTextBoxColorChange = (id: string, color: string) => {
+    setTextBoxes(textBoxes.map(box => 
+      box.id === id ? { ...box, color } : box
+    ));
+  };
+
+  // Text formatting handlers for Shape
+  const handleShapeToggleBold = (id: string) => {
+    setShapes(shapes.map(shape => 
+      shape.id === id ? { ...shape, isBold: !shape.isBold } : shape
+    ));
+  };
+
+  const handleShapeToggleItalic = (id: string) => {
+    setShapes(shapes.map(shape => 
+      shape.id === id ? { ...shape, isItalic: !shape.isItalic } : shape
+    ));
+  };
+
+  const handleShapeToggleUnderline = (id: string) => {
+    setShapes(shapes.map(shape => 
+      shape.id === id ? { ...shape, isUnderline: !shape.isUnderline } : shape
+    ));
+  };
+
+  const handleShapeTextAlignChange = (id: string, align: 'left' | 'center' | 'right') => {
+    setShapes(shapes.map(shape => 
+      shape.id === id ? { ...shape, textAlign: align } : shape
+    ));
+  };
+
+  const handleShapeTextColorChange = (id: string, color: string) => {
+    setShapes(shapes.map(shape => 
+      shape.id === id ? { ...shape, textColor: color } : shape
+    ));
+  };
+
   // Firebase whiteboard handlers
   const handleLoadWhiteboard = (data: WhiteboardData) => {
     setTextBoxes(data.textBoxes || []);
@@ -1091,6 +1177,11 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             isEditing={box.isEditing}
             fontSize={box.fontSize}
             selected={selectedBoxes.includes(box.id) && !box.isEditing}
+            isBold={box.isBold}
+            isItalic={box.isItalic}
+            isUnderline={box.isUnderline}
+            textAlign={box.textAlign}
+            color={box.color}
             // ...removed unused props...
             onTextChange={handleTextChange}
             onTextBlur={handleTextBlur}
@@ -1137,6 +1228,18 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
               y={shape.y}
               width={shape.width}
               elementType="shape"
+              textStyle={{
+                isBold: shape.isBold,
+                isItalic: shape.isItalic,
+                isUnderline: shape.isUnderline,
+                textAlign: shape.textAlign || 'center',
+                color: shape.textColor || '#000000'
+              }}
+              onToggleBold={() => handleShapeToggleBold(shape.id)}
+              onToggleItalic={() => handleShapeToggleItalic(shape.id)}
+              onToggleUnderline={() => handleShapeToggleUnderline(shape.id)}
+              onTextAlignChange={(align) => handleShapeTextAlignChange(shape.id, align)}
+              onColorChange={(color) => handleShapeTextColorChange(shape.id, color)}
               onChangeGradient={() => handleShapeChangeGradient(shape.id)}
               onDelete={() => handleShapeDelete(shape.id)}
             />
@@ -1153,6 +1256,21 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
               y={textBox.y}
               width={textBox.width}
               elementType="textbox"
+              textStyle={{
+                isBold: textBox.isBold,
+                isItalic: textBox.isItalic,
+                isUnderline: textBox.isUnderline,
+                fontSize: textBox.fontSize,
+                textAlign: textBox.textAlign || 'center',
+                color: textBox.color || '#000000'
+              }}
+              onToggleBold={() => handleTextBoxToggleBold(textBox.id)}
+              onToggleItalic={() => handleTextBoxToggleItalic(textBox.id)}
+              onToggleUnderline={() => handleTextBoxToggleUnderline(textBox.id)}
+              onFontSizeIncrease={() => handleTextBoxFontSizeIncrease(textBox.id)}
+              onFontSizeDecrease={() => handleTextBoxFontSizeDecrease(textBox.id)}
+              onTextAlignChange={(align) => handleTextBoxTextAlignChange(textBox.id, align)}
+              onColorChange={(color) => handleTextBoxColorChange(textBox.id, color)}
               onChangeGradient={() => {
                 const randomGradient = getRandomGradient();
                 changeGradient(textBox.id, randomGradient.value);

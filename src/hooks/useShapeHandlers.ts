@@ -10,6 +10,12 @@ interface Shape {
   gradient: string;
   text: string;
   isEditing: boolean;
+  // Text formatting properties
+  isBold?: boolean;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  textColor?: string;
 }
 
 export function useShapeHandlers(shapes: Shape[], setShapes: (fn: any) => void, setSelectedShapes: (fn: any) => void, setSelectedBoxes: (fn: any) => void, getRandomGradient: () => any) {
