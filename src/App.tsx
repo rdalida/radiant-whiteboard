@@ -57,8 +57,15 @@ interface Shape {
 
 import { gradients } from './gradients';
 import { handleExport, handleImport } from './hooks/useWhiteboardIO';
+import { WhiteboardData } from './hooks/useFirebaseWhiteboard';
+import WhiteboardSidebar from './components/WhiteboardSidebar';
+import { useUser } from '@clerk/clerk-react';
 
 function App() {
+  const { user } = useUser();
+  const [currentWhiteboardId, setCurrentWhiteboardId] = useState<string | null>(null);
+  // Removed unused currentWhiteboardTitle state
+  
   const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [images, setImages] = useState<WhiteboardImage[]>([]);
@@ -600,6 +607,52 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     setDrawingPaths
   });
 
+  // Firebase whiteboard handlers
+  const getCurrentWhiteboardData = () => ({
+    textBoxes,
+    shapes,
+    images,
+    drawingPaths,
+    mindMapNodes
+  });
+
+  const handleLoadWhiteboard = (data: WhiteboardData) => {
+    setTextBoxes(data.textBoxes || []);
+    setShapes(data.shapes || []);
+    setImages(data.images || []);
+    setDrawingPaths(data.drawingPaths || []);
+    setMindMapNodes(data.mindMapNodes || []);
+    
+    // Set current whiteboard info
+    setCurrentWhiteboardId(data.id || null);
+    // setCurrentWhiteboardTitle(data.title || 'Untitled Whiteboard');
+    
+    // Clear selections
+    setSelectedBoxes([]);
+    setSelectedShapes([]);
+    setSelectedMindMapNodes([]);
+    setActiveMindMapNode(null);
+  };
+
+  const handleNewWhiteboard = () => {
+    // Clear all elements
+    setTextBoxes([]);
+    setShapes([]);
+    setImages([]);
+    setDrawingPaths([]);
+    setMindMapNodes([]);
+    
+    // Reset whiteboard info
+    setCurrentWhiteboardId(null);
+    // setCurrentWhiteboardTitle('Untitled Whiteboard');
+    
+    // Clear selections
+    setSelectedBoxes([]);
+    setSelectedShapes([]);
+    setSelectedMindMapNodes([]);
+    setActiveMindMapNode(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
       {/* Grid Pattern */}
@@ -616,18 +669,31 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         />
       </div>
 
+      {/* Sidebar - only show when user is signed in */}
+      {user && (
+        <WhiteboardSidebar
+          onNewWhiteboard={handleNewWhiteboard}
+          onLoadWhiteboard={handleLoadWhiteboard}
+          currentWhiteboardId={currentWhiteboardId}
+        />
+      )}
+
       {/* Header (fixed, always visible) */}
       <Header
         activeTool={activeTool}
         setActiveTool={setActiveTool}
         handleExport={onExport}
         handleImport={onImport}
+        currentWhiteboardData={getCurrentWhiteboardData()}
+        onLoadWhiteboard={handleLoadWhiteboard}
       />
 
       {/* Whiteboard (zoomed/panned area) */}
       <div
         ref={whiteboardRef}
-        className={`relative w-full h-screen select-none pt-24 ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+        className={`relative w-full h-screen select-none pt-24 ${
+          user ? 'pl-80' : '' // Add left padding when sidebar is shown
+        } ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
         onClick={handleWhiteboardClick}
         onMouseDown={e => handleWhiteboardMouseDown({
           e,
@@ -989,7 +1055,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         )}
         </div>
       </div>
-
 
     </div>
   );
