@@ -94,7 +94,7 @@ const TextBox: React.FC<TextBoxProps> = ({
                 title="Drag to resize"
               />
               <div
-                className="absolute -top-4 left-1/2 w-3 h-3 bg-green-500 rounded-full cursor-grab border-2 border-white shadow-lg transform -translate-x-1/2"
+                className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full cursor-grab border-2 border-white shadow-lg"
                 onMouseDown={e => onRotateStart(e, id)}
                 title="Drag to rotate"
               />
