@@ -1,5 +1,9 @@
+
 import React from 'react';
 import Toolbar from './Toolbar';
+import ClerkAuthButtons from './ClerkAuthButtons';
+import UserInfo from './UserInfo';
+import { useUser } from '@clerk/clerk-react';
 
 interface HeaderProps {
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
@@ -9,6 +13,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, handleExport, handleImport }) => {
+  const { isSignedIn } = useUser();
+
   return (
     <div className="fixed top-0 left-0 w-full z-30 bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -28,7 +34,10 @@ const Header: React.FC<HeaderProps> = ({ activeTool, setActiveTool, handleExport
             handleImport={handleImport}
           />
         </div>
-        {/* Removed activeTool hint section */}
+        <div className="flex items-center justify-end min-w-[120px] space-x-3">
+          {isSignedIn && <UserInfo />}
+          <ClerkAuthButtons />
+        </div>
       </div>
     </div>
   );

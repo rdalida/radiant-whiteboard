@@ -919,7 +919,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             onTextDoubleClick={handleShapeTextDoubleClick}
             onDelete={handleShapeDelete}
             onChangeGradient={handleShapeChangeGradient}
-            onResizeStart={(e, id) => handleShapeResizeStart(e, id)}
+            onResizeStart={handleShapeResizeStart}
           />
         ))}
         {textBoxes.map((box) => (
