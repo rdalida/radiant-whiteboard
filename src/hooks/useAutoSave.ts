@@ -6,6 +6,7 @@ interface AutoSaveData {
   shapes: any[];
   images: any[];
   drawingPaths: any[];
+  arrows: any[];
   mindMapNodes: any[];
 }
 

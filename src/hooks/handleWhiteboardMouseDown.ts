@@ -5,12 +5,14 @@ interface HandleWhiteboardMouseDownParams {
   whiteboardRef: React.RefObject<HTMLDivElement>;
   pan: { x: number; y: number };
   zoom: number;
-  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
+  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow';
   setIsPanning: (val: boolean) => void;
   setPanStart: (val: { x: number; y: number } | null) => void;
   setMarquee: (val: { startX: number; startY: number; endX: number; endY: number } | null) => void;
   setIsDrawing: (val: boolean) => void;
   setCurrentPath: (path: any) => void;
+  setIsDrawingArrow: (val: boolean) => void;
+  setCurrentArrow: (arrow: any) => void;
   getRandomGradient: () => any;
 }
 
@@ -25,6 +27,8 @@ export function handleWhiteboardMouseDown({
   setMarquee,
   setIsDrawing,
   setCurrentPath,
+  setIsDrawingArrow,
+  setCurrentArrow,
   getRandomGradient
 }: HandleWhiteboardMouseDownParams) {
   if (e.button === 2) {
@@ -54,6 +58,19 @@ export function handleWhiteboardMouseDown({
           gradient: randomGradient
         };
         setCurrentPath(newPath);
+        return;
+      } else if (activeTool === 'arrow') {
+        setIsDrawingArrow(true);
+        const randomGradient = getRandomGradient();
+        const newArrow = {
+          id: Date.now().toString() + Math.random().toString(36).slice(2),
+          x1: x,
+          y1: y,
+          x2: x,
+          y2: y,
+          gradient: randomGradient
+        };
+        setCurrentArrow(newArrow);
         return;
       }
       setMarquee({ startX: x, startY: y, endX: x, endY: y });

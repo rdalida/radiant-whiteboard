@@ -2,17 +2,20 @@ import { useEffect } from 'react';
 
 
 interface UseKeyboardShortcutsProps {
-  setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen') => void;
+  setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow') => void;
   setTextBoxes: React.Dispatch<React.SetStateAction<any[]>>;
   setShapes: React.Dispatch<React.SetStateAction<any[]>>;
   setSelectedBoxes: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedShapes: React.Dispatch<React.SetStateAction<string[]>>;
+  setArrows?: React.Dispatch<React.SetStateAction<any[]>>;
+  setSelectedArrows?: React.Dispatch<React.SetStateAction<string[]>>;
   lastMousePos: { x: number; y: number };
   selectedBoxes: string[];
   selectedShapes: string[];
+  selectedArrows?: string[];
   textBoxes: any[];
   shapes: any[];
-  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
+  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow';
   getRandomGradient: () => any;
   // Mind Map props
   activeMindMapNode: string | null;
@@ -33,9 +36,12 @@ export function useKeyboardShortcuts({
   setShapes,
   setSelectedBoxes,
   setSelectedShapes,
+  setArrows,
+  setSelectedArrows,
   lastMousePos,
   selectedBoxes,
   selectedShapes,
+  selectedArrows,
   textBoxes,
   shapes,
   activeTool,
@@ -66,6 +72,8 @@ export function useKeyboardShortcuts({
           setActiveTool('diamond');
         } else if (e.key === 'r' || e.key === 'R') {
           setActiveTool('pen');
+        } else if (e.key === 'a' || e.key === 'A') {
+          setActiveTool('arrow');
         } else if (e.key === 'b' || e.key === 'B') {
           // Toggle sidebar
           setSidebarOpen(prev => !prev);
@@ -117,7 +125,7 @@ export function useKeyboardShortcuts({
           }
         ]);
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused && !isEditingText && (selectedBoxes.length > 0 || selectedShapes.length > 0 || selectedMindMapNodes.length > 0)) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused && !isEditingText && (selectedBoxes.length > 0 || selectedShapes.length > 0 || selectedMindMapNodes.length > 0 || (selectedArrows && selectedArrows.length > 0))) {
         e.preventDefault();
         
         // Delete selected text boxes
@@ -130,6 +138,11 @@ export function useKeyboardShortcuts({
         if (selectedShapes.length > 0) {
           setShapes(shapes => shapes.filter(shape => !selectedShapes.includes(shape.id)));
           setSelectedShapes([]);
+        }
+
+        if (selectedArrows && setArrows && setSelectedArrows && selectedArrows.length > 0) {
+          setArrows(arrows => arrows.filter((a: any) => !selectedArrows.includes(a.id)));
+          setSelectedArrows([]);
         }
         
         // Delete selected mind map nodes
@@ -197,5 +210,5 @@ export function useKeyboardShortcuts({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBoxes, selectedShapes, selectedMindMapNodes, lastMousePos, textBoxes, shapes, activeTool, activeMindMapNode]);
+  }, [selectedBoxes, selectedShapes, selectedMindMapNodes, selectedArrows, lastMousePos, textBoxes, shapes, activeTool, activeMindMapNode]);
 }

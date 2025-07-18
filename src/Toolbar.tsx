@@ -1,9 +1,9 @@
 import React from 'react';
-import { Square, Circle, Diamond, Pen } from 'lucide-react';
+import { Square, Circle, Diamond, Pen, ArrowRight } from 'lucide-react';
 
 interface ToolbarProps {
-  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
-  setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen') => void;
+  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow';
+  setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow') => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -49,6 +49,18 @@ const Toolbar: React.FC<ToolbarProps> = ({
         >
           <Diamond className="w-4 h-4" />
           <span className="text-sm font-medium">Diamond</span>
+        </button>
+        <button
+          onClick={() => setActiveTool('arrow')}
+          className={`flex items-center space-x-1 px-3 py-2 rounded-xl transition-colors ${
+            activeTool === 'arrow'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+          title="Arrow Tool"
+        >
+          <ArrowRight className="w-4 h-4" />
+          <span className="text-sm font-medium">Arrow</span>
         </button>
         <button
           onClick={() => setActiveTool('pen')}

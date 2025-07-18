@@ -6,10 +6,12 @@ import { handleMouseUp } from './hooks/handleMouseUp';
 import { useTextBoxHandlers } from './hooks/useTextBoxHandlers';
 import { useShapeHandlers } from './hooks/useShapeHandlers';
 import { useImageHandlers } from './hooks/useImageHandlers';
+import { useArrowHandlers } from './hooks/useArrowHandlers';
 import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
 import ShapeElement from './ShapeElement';
+import ArrowElement from './ArrowElement';
 import FloatingToolbar from './FloatingToolbar';
 import MindMapNode, { MindMapNodeData } from './MindMapNode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -30,6 +32,15 @@ interface DrawingPath {
   color: string;
   strokeWidth: number;
   createdAt: number; // timestamp in ms
+}
+
+interface Arrow {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  gradient: { name: string; value: string; preview: string };
 }
 import { Plus } from 'lucide-react';
 import Header from './Header';
@@ -102,6 +113,10 @@ function App() {
   const [drawingPaths, setDrawingPaths] = useState<DrawingPath[]>([]);
   const [currentPath, setCurrentPath] = useState<DrawingPath | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [currentArrow, setCurrentArrow] = useState<Arrow | null>(null);
+  const [isDrawingArrow, setIsDrawingArrow] = useState(false);
+  const [selectedArrows, setSelectedArrows] = useState<string[]>([]);
   const [draggingImage, setDraggingImage] = useState<string | null>(null);
   const [dragImageStart, setDragImageStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
   
@@ -120,7 +135,7 @@ function App() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]); // multi-select images
   const [lastMousePos, setLastMousePos] = useState<{x: number, y: number}>({x: 200, y: 200});
   const [marquee, setMarquee] = useState<null | {startX: number, startY: number, endX: number, endY: number}>(null);
-  const [activeTool, setActiveTool] = useState<'text' | 'rectangle' | 'circle' | 'diamond' | 'pen'>('text');
+  const [activeTool, setActiveTool] = useState<'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow'>('text');
   const {
     pan,
     setPan,
@@ -152,6 +167,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       shapes,
       images,
       drawingPaths,
+      arrows,
       mindMapNodes,
     },
     currentWhiteboardTitle
@@ -163,6 +179,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     shapes,
     images,
     drawingPaths,
+    arrows,
     mindMapNodes,
   });
 
@@ -171,9 +188,16 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     if (currentWhiteboardId && user) {
       // Existing whiteboard - trigger auto-save
       triggerAutoSave(false);
-    } else if (!currentWhiteboardId && user && 
-               (textBoxes.length > 0 || shapes.length > 0 || images.length > 0 || 
-                drawingPaths.length > 0 || mindMapNodes.length > 0)) {
+    } else if (
+      !currentWhiteboardId &&
+      user &&
+      (textBoxes.length > 0 ||
+        shapes.length > 0 ||
+        images.length > 0 ||
+        arrows.length > 0 ||
+        drawingPaths.length > 0 ||
+        mindMapNodes.length > 0)
+    ) {
       // New whiteboard with content - trigger auto-save
       triggerAutoSave(true).then((newId) => {
         if (newId) {
@@ -290,6 +314,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       setSelectedBoxes([]);
       setSelectedShapes([]);
       setSelectedImages([]);
+      setSelectedArrows([]);
       setSelectedMindMapNodes([]);
       setActiveMindMapNode(null);
     }
@@ -318,6 +343,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     handleDelete: handleShapeDelete,
     handleChangeGradient: handleShapeChangeGradient
   } = useShapeHandlers(shapes, setShapes, setSelectedShapes, setSelectedBoxes, getRandomGradient);
+
+  const { handleArrowClick, handleArrowDelete } = useArrowHandlers(arrows, setArrows, setSelectedArrows);
 
   // Mind Map handlers
   const handleMindMapNodeSelect = (id: string, e?: React.MouseEvent) => {
@@ -641,9 +668,12 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     setShapes,
     setSelectedBoxes,
     setSelectedShapes,
+    setArrows,
+    setSelectedArrows,
     lastMousePos,
     selectedBoxes,
     selectedShapes,
+    selectedArrows,
     textBoxes,
     shapes,
     activeTool,
@@ -739,6 +769,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     setShapes(data.shapes || []);
     setImages(data.images || []);
     setDrawingPaths(data.drawingPaths || []);
+    setArrows((data as any).arrows || []);
     setMindMapNodes(data.mindMapNodes || []);
     
     // Set current whiteboard info
@@ -749,6 +780,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     setSelectedBoxes([]);
     setSelectedShapes([]);
     setSelectedImages([]);
+    setSelectedArrows([]);
     setSelectedMindMapNodes([]);
     setActiveMindMapNode(null);
   };
@@ -759,6 +791,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     setShapes([]);
     setImages([]);
     setDrawingPaths([]);
+    setArrows([]);
     setMindMapNodes([]);
     
     // Reset whiteboard info
@@ -864,6 +897,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           setMarquee,
           setIsDrawing,
           setCurrentPath,
+          setIsDrawingArrow,
+          setCurrentArrow,
           getRandomGradient
         })}
         onMouseMove={e => {
@@ -880,6 +915,9 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             currentPath,
             activeTool,
             setCurrentPath,
+            isDrawingArrow,
+            currentArrow,
+            setCurrentArrow,
             draggingShape,
             dragShapeStart,
             setShapes,
@@ -947,12 +985,17 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           }
         }}
         onMouseUp={() => {
-          handleMouseUp({
+            handleMouseUp({
             isDrawing,
             currentPath,
             setDrawingPaths,
             setCurrentPath,
             setIsDrawing,
+            isDrawingArrow,
+            currentArrow,
+            setArrows,
+            setCurrentArrow,
+            setIsDrawingArrow,
             setResizingBox,
             setResizingShape,
             setResizingImage,
@@ -998,6 +1041,11 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             setDrawingPaths,
             setCurrentPath,
             setIsDrawing,
+            isDrawingArrow,
+            currentArrow,
+            setArrows,
+            setCurrentArrow,
+            setIsDrawingArrow,
             setResizingBox,
             setResizingShape,
             setResizingImage,
@@ -1056,6 +1104,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           setMarquee,
           setIsDrawing,
           setCurrentPath,
+          setIsDrawingArrow,
+          setCurrentArrow,
           getRandomGradient
         })}
         >
@@ -1096,6 +1146,16 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           currentPath={currentPath}
           gradients={gradients}
         />
+
+        {/* Arrows */}
+        {arrows.map(arrow => (
+          <ArrowElement
+            key={arrow.id}
+            arrow={arrow}
+            selected={selectedArrows.includes(arrow.id)}
+            onClick={(e, id) => handleArrowClick(e, id)}
+          />
+        ))}
         
         {/* Render images behind shapes and text */}
         {images.map((img) => (
@@ -1268,7 +1328,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         })()}
 
         {/* Empty State */}
-        {textBoxes.length === 0 && shapes.length === 0 && images.length === 0 && drawingPaths.length === 0 && mindMapNodes.length === 0 && (
+        {textBoxes.length === 0 && shapes.length === 0 && images.length === 0 && drawingPaths.length === 0 && arrows.length === 0 && mindMapNodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
               <div className="bg-gradient-to-r from-gray-400 to-gray-600 bg-clip-text text-transparent">

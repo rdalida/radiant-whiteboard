@@ -6,6 +6,11 @@ interface HandleMouseUpParams {
   setDrawingPaths: (fn: any) => void;
   setCurrentPath: (val: any) => void;
   setIsDrawing: (val: boolean) => void;
+  isDrawingArrow: boolean;
+  currentArrow: any;
+  setArrows: (fn: any) => void;
+  setCurrentArrow: (val: any) => void;
+  setIsDrawingArrow: (val: boolean) => void;
   setResizingBox: (val: string | null) => void;
   setResizingShape: (val: string | null) => void;
   setResizingImage: (val: string | null) => void;
@@ -38,6 +43,11 @@ export function handleMouseUp({
   setDrawingPaths,
   setCurrentPath,
   setIsDrawing,
+  isDrawingArrow,
+  currentArrow,
+  setArrows,
+  setCurrentArrow,
+  setIsDrawingArrow,
   setResizingBox,
   setResizingShape,
   setResizingImage,
@@ -67,6 +77,11 @@ export function handleMouseUp({
     setDrawingPaths((prev: any[]) => [...prev, currentPath]);
     setCurrentPath(null);
     setIsDrawing(false);
+  }
+  if (isDrawingArrow && currentArrow) {
+    setArrows((prev: any[]) => [...prev, currentArrow]);
+    setCurrentArrow(null);
+    setIsDrawingArrow(false);
   }
   setResizingBox(null);
   setResizingShape(null);

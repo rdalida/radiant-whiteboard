@@ -11,8 +11,11 @@ interface HandleWhiteboardMouseMoveParams {
   setPanStart: (val: { x: number; y: number } | null) => void;
   isDrawing: boolean;
   currentPath: any;
-  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
+  activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen' | 'arrow';
   setCurrentPath: (path: any) => void;
+  isDrawingArrow: boolean;
+  currentArrow: any;
+  setCurrentArrow: (arrow: any) => void;
   draggingShape: string | null;
   dragShapeStart: { x: number; y: number; offsetX: number; offsetY: number } | null;
   setShapes: (fn: any) => void;
@@ -47,6 +50,9 @@ export function handleWhiteboardMouseMove({
   currentPath,
   activeTool,
   setCurrentPath,
+  isDrawingArrow,
+  currentArrow,
+  setCurrentArrow,
   draggingShape,
   dragShapeStart,
   setShapes,
@@ -84,6 +90,14 @@ export function handleWhiteboardMouseMove({
       ...prev,
       points: [...prev.points, { x, y }]
     } : null);
+    return;
+  }
+  if (isDrawingArrow && currentArrow && activeTool === 'arrow') {
+    const rect = whiteboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = (e.clientX - rect.left - pan.x) / zoom;
+    const y = (e.clientY - rect.top - pan.y) / zoom;
+    setCurrentArrow((prev: any) => prev ? { ...prev, x2: x, y2: y } : null);
     return;
   }
   if (draggingShape && dragShapeStart) {
