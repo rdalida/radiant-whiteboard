@@ -6,6 +6,7 @@ interface AutoSaveData {
   shapes: any[];
   images: any[];
   drawingPaths: any[];
+  arrows: any[];
   mindMapNodes: any[];
 }
 
@@ -76,9 +77,9 @@ export const useAutoSave = (
     const currentData = currentDataRef.current;
     const currentTitle = currentTitleRef.current;
     
-    const hasContent = currentData.textBoxes.length > 0 || currentData.shapes.length > 0 || 
-                      currentData.images.length > 0 || currentData.drawingPaths.length > 0 || 
-                      currentData.mindMapNodes.length > 0;
+    const hasContent = currentData.textBoxes.length > 0 || currentData.shapes.length > 0 ||
+                      currentData.images.length > 0 || currentData.drawingPaths.length > 0 ||
+                      currentData.arrows.length > 0 || currentData.mindMapNodes.length > 0;
 
     if (!hasContent) return;
 

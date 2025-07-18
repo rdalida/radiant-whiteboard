@@ -6,6 +6,11 @@ interface HandleMouseUpParams {
   setDrawingPaths: (fn: any) => void;
   setCurrentPath: (val: any) => void;
   setIsDrawing: (val: boolean) => void;
+  isDrawingArrow?: boolean;
+  currentArrow?: any;
+  setArrows?: (fn: any) => void;
+  setCurrentArrow?: (val: any) => void;
+  setIsDrawingArrow?: (val: boolean) => void;
   setResizingBox: (val: string | null) => void;
   setResizingShape: (val: string | null) => void;
   setResizingImage: (val: string | null) => void;
@@ -18,6 +23,9 @@ interface HandleMouseUpParams {
   draggingImage: string | null;
   setDraggingImage: (val: string | null) => void;
   setDragImageStart: (val: any) => void;
+  draggingArrow?: string | null;
+  setDraggingArrow?: (val: string | null) => void;
+  setDragArrowStart?: (val: any) => void;
   isPanning: boolean;
   setIsPanning: (val: boolean) => void;
   setPanStart: (val: any) => void;
@@ -25,9 +33,11 @@ interface HandleMouseUpParams {
   whiteboardRef: RefObject<HTMLDivElement>;
   textBoxes: any[];
   shapes: any[];
+  arrows?: any[];
   mindMapNodes: any[];
   setSelectedBoxes: (val: string[]) => void;
   setSelectedShapes: (val: string[]) => void;
+  setSelectedArrows?: (val: string[]) => void;
   setSelectedMindMapNodes: (val: string[]) => void;
   setMarquee: (val: any) => void;
 }
@@ -38,6 +48,11 @@ export function handleMouseUp({
   setDrawingPaths,
   setCurrentPath,
   setIsDrawing,
+  isDrawingArrow,
+  currentArrow,
+  setArrows,
+  setCurrentArrow,
+  setIsDrawingArrow,
   setResizingBox,
   setResizingShape,
   setResizingImage,
@@ -50,6 +65,9 @@ export function handleMouseUp({
   draggingImage,
   setDraggingImage,
   setDragImageStart,
+  draggingArrow,
+  setDraggingArrow,
+  setDragArrowStart,
   isPanning,
   setIsPanning,
   setPanStart,
@@ -57,9 +75,11 @@ export function handleMouseUp({
   whiteboardRef,
   textBoxes,
   shapes,
+  arrows,
   mindMapNodes,
   setSelectedBoxes,
   setSelectedShapes,
+  setSelectedArrows,
   setSelectedMindMapNodes,
   setMarquee
 }: HandleMouseUpParams) {
@@ -67,6 +87,11 @@ export function handleMouseUp({
     setDrawingPaths((prev: any[]) => [...prev, currentPath]);
     setCurrentPath(null);
     setIsDrawing(false);
+  }
+  if (isDrawingArrow && currentArrow && setArrows && setCurrentArrow) {
+    setArrows((prev: any[]) => [...prev, currentArrow]);
+    setCurrentArrow(null);
+    if (setIsDrawingArrow) setIsDrawingArrow(false);
   }
   setResizingBox(null);
   setResizingShape(null);
@@ -82,6 +107,10 @@ export function handleMouseUp({
   if (draggingImage) {
     setDraggingImage(null);
     setDragImageStart(null);
+  }
+  if (draggingArrow && setDraggingArrow && setDragArrowStart) {
+    setDraggingArrow(null);
+    setDragArrowStart(null);
   }
   if (isPanning) {
     setIsPanning(false);
@@ -113,8 +142,16 @@ export function handleMouseUp({
       const ny2 = node.y + node.height;
       return nx2 > x1 && nx1 < x2 && ny2 > y1 && ny1 < y2;
     }).map((node: any) => node.id);
+    const selectedArrowIds = arrows ? arrows.filter((arrow: any) => {
+      const ax1 = Math.min(arrow.startX, arrow.endX);
+      const ay1 = Math.min(arrow.startY, arrow.endY);
+      const ax2 = Math.max(arrow.startX, arrow.endX);
+      const ay2 = Math.max(arrow.startY, arrow.endY);
+      return ax2 > x1 && ax1 < x2 && ay2 > y1 && ay1 < y2;
+    }).map((a: any) => a.id) : [];
     setSelectedBoxes(selectedBoxes);
     setSelectedShapes(selectedShapesIds);
+    if (setSelectedArrows) setSelectedArrows(selectedArrowIds);
     setSelectedMindMapNodes(selectedMindMapNodeIds);
     setMarquee(null);
   }

@@ -13,6 +13,12 @@ interface HandleWhiteboardMouseMoveParams {
   currentPath: any;
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
   setCurrentPath: (path: any) => void;
+  isDrawingArrow: boolean;
+  currentArrow: any;
+  setCurrentArrow: (arrow: any) => void;
+  draggingArrow: string | null;
+  dragArrowStart: { startX:number; startY:number; endX:number; endY:number; mouseX:number; mouseY:number } | null;
+  setArrows: (fn: any) => void;
   draggingShape: string | null;
   dragShapeStart: { x: number; y: number; offsetX: number; offsetY: number } | null;
   setShapes: (fn: any) => void;
@@ -47,6 +53,12 @@ export function handleWhiteboardMouseMove({
   currentPath,
   activeTool,
   setCurrentPath,
+  isDrawingArrow,
+  currentArrow,
+  setCurrentArrow,
+  draggingArrow,
+  dragArrowStart,
+  setArrows,
   draggingShape,
   dragShapeStart,
   setShapes,
@@ -86,6 +98,14 @@ export function handleWhiteboardMouseMove({
     } : null);
     return;
   }
+  if (isDrawingArrow && currentArrow) {
+    const rect = whiteboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = (e.clientX - rect.left - pan.x) / zoom;
+    const y = (e.clientY - rect.top - pan.y) / zoom;
+    setCurrentArrow({ ...currentArrow, endX: x, endY: y });
+    return;
+  }
   if (draggingShape && dragShapeStart) {
     const rect = whiteboardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -95,6 +115,20 @@ export function handleWhiteboardMouseMove({
       shape.id === draggingShape
         ? { ...shape, x: mouseX - dragShapeStart.offsetX, y: mouseY - dragShapeStart.offsetY }
         : shape
+    ));
+    return;
+  }
+  if (draggingArrow && dragArrowStart) {
+    const rect = whiteboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+    const dx = mouseX - dragArrowStart.mouseX;
+    const dy = mouseY - dragArrowStart.mouseY;
+    setArrows((prev: any[]) => prev.map((arrow: any) =>
+      arrow.id === draggingArrow
+        ? { ...arrow, startX: dragArrowStart.startX + dx, startY: dragArrowStart.startY + dy, endX: dragArrowStart.endX + dx, endY: dragArrowStart.endY + dy }
+        : arrow
     ));
     return;
   }

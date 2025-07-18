@@ -11,6 +11,8 @@ interface HandleWhiteboardMouseDownParams {
   setMarquee: (val: { startX: number; startY: number; endX: number; endY: number } | null) => void;
   setIsDrawing: (val: boolean) => void;
   setCurrentPath: (path: any) => void;
+  setIsDrawingArrow: (val: boolean) => void;
+  setCurrentArrow: (arrow: any) => void;
   getRandomGradient: () => any;
 }
 
@@ -25,6 +27,8 @@ export function handleWhiteboardMouseDown({
   setMarquee,
   setIsDrawing,
   setCurrentPath,
+  setIsDrawingArrow,
+  setCurrentArrow,
   getRandomGradient
 }: HandleWhiteboardMouseDownParams) {
   if (e.button === 2) {
@@ -54,6 +58,17 @@ export function handleWhiteboardMouseDown({
           gradient: randomGradient
         };
         setCurrentPath(newPath);
+        return;
+      }
+      if (e.shiftKey) {
+        setIsDrawingArrow(true);
+        setCurrentArrow({
+          id: Date.now().toString() + Math.random().toString(36).slice(2),
+          startX: x,
+          startY: y,
+          endX: x,
+          endY: y
+        });
         return;
       }
       setMarquee({ startX: x, startY: y, endX: x, endY: y });

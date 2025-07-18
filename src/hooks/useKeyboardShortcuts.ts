@@ -5,13 +5,17 @@ interface UseKeyboardShortcutsProps {
   setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen') => void;
   setTextBoxes: React.Dispatch<React.SetStateAction<any[]>>;
   setShapes: React.Dispatch<React.SetStateAction<any[]>>;
+  setArrows?: React.Dispatch<React.SetStateAction<any[]>>;
   setSelectedBoxes: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedShapes: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedArrows?: React.Dispatch<React.SetStateAction<string[]>>;
   lastMousePos: { x: number; y: number };
   selectedBoxes: string[];
   selectedShapes: string[];
+  selectedArrows?: string[];
   textBoxes: any[];
   shapes: any[];
+  arrows?: any[];
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
   getRandomGradient: () => any;
   // Mind Map props
@@ -31,13 +35,17 @@ export function useKeyboardShortcuts({
   setActiveTool,
   setTextBoxes,
   setShapes,
+  setArrows,
   setSelectedBoxes,
   setSelectedShapes,
+  setSelectedArrows,
   lastMousePos,
   selectedBoxes,
   selectedShapes,
+  selectedArrows,
   textBoxes,
   shapes,
+  arrows,
   activeTool,
   getRandomGradient,
   activeMindMapNode,
@@ -117,7 +125,7 @@ export function useKeyboardShortcuts({
           }
         ]);
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused && !isEditingText && (selectedBoxes.length > 0 || selectedShapes.length > 0 || selectedMindMapNodes.length > 0)) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputFocused && !isEditingText && (selectedBoxes.length > 0 || selectedShapes.length > 0 || (selectedArrows && selectedArrows.length > 0) || selectedMindMapNodes.length > 0)) {
         e.preventDefault();
         
         // Delete selected text boxes
@@ -130,6 +138,12 @@ export function useKeyboardShortcuts({
         if (selectedShapes.length > 0) {
           setShapes(shapes => shapes.filter(shape => !selectedShapes.includes(shape.id)));
           setSelectedShapes([]);
+        }
+
+        // Delete selected arrows
+        if (selectedArrows && selectedArrows.length > 0 && setArrows && setSelectedArrows) {
+          setArrows(arrows => arrows.filter((a:any) => !selectedArrows.includes(a.id)));
+          setSelectedArrows([]);
         }
         
         // Delete selected mind map nodes

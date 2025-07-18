@@ -22,6 +22,7 @@ export interface WhiteboardData {
   shapes: any[];
   images: any[];
   drawingPaths: any[];
+  arrows: any[];
   mindMapNodes: any[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -42,6 +43,7 @@ export const useFirebaseWhiteboard = () => {
       shapes: any[];
       images: any[];
       drawingPaths: any[];
+      arrows: any[];
       mindMapNodes: any[];
     }
   ): Promise<string | null> => {
@@ -109,6 +111,7 @@ export const useFirebaseWhiteboard = () => {
       shapes: any[];
       images: any[];
       drawingPaths: any[];
+      arrows: any[];
       mindMapNodes: any[];
     }
   ): Promise<boolean> => {
@@ -118,11 +121,12 @@ export const useFirebaseWhiteboard = () => {
       const updateData = {
         textBoxes: removeUndefined(whiteboardData.textBoxes),
         shapes: removeUndefined(whiteboardData.shapes),
-        images: removeUndefined(whiteboardData.images),
-        drawingPaths: removeUndefined(whiteboardData.drawingPaths),
-        mindMapNodes: removeUndefined(whiteboardData.mindMapNodes),
-        updatedAt: Timestamp.now()
-      };
+      images: removeUndefined(whiteboardData.images),
+      drawingPaths: removeUndefined(whiteboardData.drawingPaths),
+      arrows: removeUndefined(whiteboardData.arrows),
+      mindMapNodes: removeUndefined(whiteboardData.mindMapNodes),
+      updatedAt: Timestamp.now()
+    };
       const docRef = doc(db, 'whiteboards', id);
       await updateDoc(docRef, updateData);
       setLoading(false);
