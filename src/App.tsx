@@ -608,14 +608,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   });
 
   // Firebase whiteboard handlers
-  const getCurrentWhiteboardData = () => ({
-    textBoxes,
-    shapes,
-    images,
-    drawingPaths,
-    mindMapNodes
-  });
-
   const handleLoadWhiteboard = (data: WhiteboardData) => {
     setTextBoxes(data.textBoxes || []);
     setShapes(data.shapes || []);
@@ -684,8 +676,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         setActiveTool={setActiveTool}
         handleExport={onExport}
         handleImport={onImport}
-        currentWhiteboardData={getCurrentWhiteboardData()}
-        onLoadWhiteboard={handleLoadWhiteboard}
       />
 
       {/* Whiteboard (zoomed/panned area) */}
