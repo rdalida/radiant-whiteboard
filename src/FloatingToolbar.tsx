@@ -4,15 +4,10 @@ import {
   Trash2, 
   Copy, 
   RotateCcw, 
-  Bold, 
-  Italic, 
+  Bold,
+  Italic,
   Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
   Type,
-  Plus,
-  Minus,
   ChevronDown
 } from 'lucide-react';
 
@@ -32,16 +27,11 @@ interface FloatingToolbarProps {
     isBold?: boolean;
     isItalic?: boolean;
     isUnderline?: boolean;
-    fontSize?: number;
-    textAlign?: 'left' | 'center' | 'right';
     color?: string;
   };
   onToggleBold?: () => void;
   onToggleItalic?: () => void;
   onToggleUnderline?: () => void;
-  onFontSizeIncrease?: () => void;
-  onFontSizeDecrease?: () => void;
-  onTextAlignChange?: (align: 'left' | 'center' | 'right') => void;
   onColorChange?: (color: string) => void;
 }
 
@@ -58,9 +48,6 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   onToggleBold,
   onToggleItalic,
   onToggleUnderline,
-  onFontSizeIncrease,
-  onFontSizeDecrease,
-  onTextAlignChange,
   onColorChange,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -106,32 +93,6 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       {/* Text Formatting Controls - only for textbox and shapes */}
       {hasTextFormatting && (
         <>
-          {/* Font Size Controls */}
-          <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onFontSizeDecrease?.();
-              }}
-              className="p-1 rounded hover:bg-gray-100 transition-colors"
-              title="Decrease font size"
-            >
-              <Minus className="w-3 h-3 text-gray-600" />
-            </button>
-            <span className="mx-2 text-xs text-gray-600 min-w-[2rem] text-center">
-              {textStyle?.fontSize || 16}px
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onFontSizeIncrease?.();
-              }}
-              className="p-1 rounded hover:bg-gray-100 transition-colors"
-              title="Increase font size"
-            >
-              <Plus className="w-3 h-3 text-gray-600" />
-            </button>
-          </div>
 
           {/* Text Style Controls */}
           <div className="flex items-center border-r border-gray-200 pr-2 mr-2 space-x-1">
@@ -179,51 +140,6 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
             </button>
           </div>
 
-          {/* Text Alignment */}
-          <div className="flex items-center border-r border-gray-200 pr-2 mr-2 space-x-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTextAlignChange?.('left');
-              }}
-              className={`p-1.5 rounded transition-colors ${
-                textStyle?.textAlign === 'left' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-              title="Align left"
-            >
-              <AlignLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTextAlignChange?.('center');
-              }}
-              className={`p-1.5 rounded transition-colors ${
-                textStyle?.textAlign === 'center' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-              title="Align center"
-            >
-              <AlignCenter className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTextAlignChange?.('right');
-              }}
-              className={`p-1.5 rounded transition-colors ${
-                textStyle?.textAlign === 'right' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-              title="Align right"
-            >
-              <AlignRight className="w-4 h-4" />
-            </button>
-          </div>
 
           {/* Color Picker */}
           <div className="relative border-r border-gray-200 pr-2 mr-2">

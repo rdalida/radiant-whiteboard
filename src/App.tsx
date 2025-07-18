@@ -697,22 +697,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     ));
   };
 
-  const handleTextBoxFontSizeIncrease = (id: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, fontSize: Math.min(box.fontSize + 2, 72) } : box
-    ));
-  };
-
-  const handleTextBoxFontSizeDecrease = (id: string) => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, fontSize: Math.max(box.fontSize - 2, 8) } : box
-    ));
-  };
-
-  const handleTextBoxTextAlignChange = (id: string, align: 'left' | 'center' | 'right') => {
-    setTextBoxes(textBoxes.map(box => 
-      box.id === id ? { ...box, textAlign: align } : box
-    ));
+  const handleTextBoxTextAlignChange = (_id: string, _align: 'left' | 'center' | 'right') => {
+    // alignment controls removed
   };
 
   const handleTextBoxColorChange = (id: string, color: string) => {
@@ -740,11 +726,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     ));
   };
 
-  const handleShapeTextAlignChange = (id: string, align: 'left' | 'center' | 'right') => {
-    setShapes(shapes.map(shape => 
-      shape.id === id ? { ...shape, textAlign: align } : shape
-    ));
-  };
 
   const handleShapeTextColorChange = (id: string, color: string) => {
     setShapes(shapes.map(shape => 
@@ -1180,9 +1161,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             isBold={box.isBold}
             isItalic={box.isItalic}
             isUnderline={box.isUnderline}
-            textAlign={box.textAlign}
             color={box.color}
-            // ...removed unused props...
             onTextChange={handleTextChange}
             onTextBlur={handleTextBlur}
             onTextClick={(id, e) => {
@@ -1232,13 +1211,11 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
                 isBold: shape.isBold,
                 isItalic: shape.isItalic,
                 isUnderline: shape.isUnderline,
-                textAlign: shape.textAlign || 'center',
                 color: shape.textColor || '#000000'
               }}
               onToggleBold={() => handleShapeToggleBold(shape.id)}
               onToggleItalic={() => handleShapeToggleItalic(shape.id)}
               onToggleUnderline={() => handleShapeToggleUnderline(shape.id)}
-              onTextAlignChange={(align) => handleShapeTextAlignChange(shape.id, align)}
               onColorChange={(color) => handleShapeTextColorChange(shape.id, color)}
               onChangeGradient={() => handleShapeChangeGradient(shape.id)}
               onDelete={() => handleShapeDelete(shape.id)}
@@ -1260,16 +1237,11 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
                 isBold: textBox.isBold,
                 isItalic: textBox.isItalic,
                 isUnderline: textBox.isUnderline,
-                fontSize: textBox.fontSize,
-                textAlign: textBox.textAlign || 'center',
                 color: textBox.color || '#000000'
               }}
               onToggleBold={() => handleTextBoxToggleBold(textBox.id)}
               onToggleItalic={() => handleTextBoxToggleItalic(textBox.id)}
               onToggleUnderline={() => handleTextBoxToggleUnderline(textBox.id)}
-              onFontSizeIncrease={() => handleTextBoxFontSizeIncrease(textBox.id)}
-              onFontSizeDecrease={() => handleTextBoxFontSizeDecrease(textBox.id)}
-              onTextAlignChange={(align) => handleTextBoxTextAlignChange(textBox.id, align)}
               onColorChange={(color) => handleTextBoxColorChange(textBox.id, color)}
               onChangeGradient={() => {
                 const randomGradient = getRandomGradient();
