@@ -30,6 +30,7 @@ interface DrawingPath {
 }
 import { Plus } from 'lucide-react';
 import Header from './Header';
+import Toolbar from './Toolbar';
 
 interface TextBox {
   id: string;
@@ -661,7 +662,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       )}
 
       {/* Header (fixed, always visible) */}
-      <Header
+      <Header />
+
+      {/* Floating Toolbar */}
+      <Toolbar
         activeTool={activeTool}
         setActiveTool={setActiveTool}
       />

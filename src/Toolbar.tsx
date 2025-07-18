@@ -11,56 +11,56 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setActiveTool,
 }) => {
   return (
-    <div className="flex items-center space-x-2">
-      <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-lg p-2">
+      <div className="flex items-center space-x-1">
         {/* Removed Text tool button, use 'T' keyboard shortcut to add text */}
         <button
           onClick={() => setActiveTool('rectangle')}
-          className={`flex items-center space-x-1 px-3 py-2 rounded-md transition-colors ${
+          className={`flex items-center space-x-1 px-3 py-2 rounded-xl transition-colors ${
             activeTool === 'rectangle'
-              ? 'bg-white shadow-sm text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           }`}
           title="Rectangle Tool"
         >
           <Square className="w-4 h-4" />
-          <span className="text-sm">Rectangle</span>
+          <span className="text-sm font-medium">Rectangle</span>
         </button>
         <button
           onClick={() => setActiveTool('circle')}
-          className={`flex items-center space-x-1 px-3 py-2 rounded-md transition-colors ${
+          className={`flex items-center space-x-1 px-3 py-2 rounded-xl transition-colors ${
             activeTool === 'circle'
-              ? 'bg-white shadow-sm text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           }`}
           title="Circle Tool"
         >
           <Circle className="w-4 h-4" />
-          <span className="text-sm">Circle</span>
+          <span className="text-sm font-medium">Circle</span>
         </button>
         <button
           onClick={() => setActiveTool('diamond')}
-          className={`flex items-center space-x-1 px-3 py-2 rounded-md transition-colors ${
+          className={`flex items-center space-x-1 px-3 py-2 rounded-xl transition-colors ${
             activeTool === 'diamond'
-              ? 'bg-white shadow-sm text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           }`}
           title="Diamond Tool"
         >
           <Diamond className="w-4 h-4" />
-          <span className="text-sm">Diamond</span>
+          <span className="text-sm font-medium">Diamond</span>
         </button>
         <button
           onClick={() => setActiveTool('pen')}
-          className={`flex items-center space-x-1 px-3 py-2 rounded-md transition-colors ${
+          className={`flex items-center space-x-1 px-3 py-2 rounded-xl transition-colors ${
             activeTool === 'pen'
-              ? 'bg-white shadow-sm text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           }`}
           title="Pen Tool"
         >
           <Pen className="w-4 h-4" />
-          <span className="text-sm">Pen</span>
+          <span className="text-sm font-medium">Pen</span>
         </button>
       </div>
     </div>
