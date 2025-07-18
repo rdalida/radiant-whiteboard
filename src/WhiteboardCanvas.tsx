@@ -12,6 +12,7 @@ interface DrawingPath {
 interface WhiteboardCanvasProps {
   drawingPaths: DrawingPath[];
   currentPath: DrawingPath | null;
+  currentArrow?: any;
   gradients: any[];
   style?: React.CSSProperties;
 }
@@ -19,6 +20,7 @@ interface WhiteboardCanvasProps {
 const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   drawingPaths,
   currentPath,
+  currentArrow,
   gradients,
   style = {},
 }) => {
@@ -81,6 +83,34 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+      )}
+      
+      {/* Render current arrow being drawn */}
+      {currentArrow && (
+        <>
+          <line 
+            x1={currentArrow.startX} 
+            y1={currentArrow.startY} 
+            x2={currentArrow.endX} 
+            y2={currentArrow.endY} 
+            stroke="black" 
+            strokeWidth={2}
+            opacity={0.7}
+          />
+          {/* Arrow head */}
+          {(() => {
+            const angle = Math.atan2(currentArrow.endY - currentArrow.startY, currentArrow.endX - currentArrow.startX);
+            const headLength = 10;
+            const arrowHead = `${currentArrow.endX},${currentArrow.endY} ${currentArrow.endX - headLength * Math.cos(angle - Math.PI / 6)},${currentArrow.endY - headLength * Math.sin(angle - Math.PI / 6)} ${currentArrow.endX - headLength * Math.cos(angle + Math.PI / 6)},${currentArrow.endY - headLength * Math.sin(angle + Math.PI / 6)}`;
+            return (
+              <polygon 
+                points={arrowHead} 
+                fill="black" 
+                opacity={0.7}
+              />
+            );
+          })()}
+        </>
       )}
     </svg>
   );
