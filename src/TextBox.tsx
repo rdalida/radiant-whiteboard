@@ -15,7 +15,6 @@ interface TextBoxProps {
   isBold?: boolean;
   isItalic?: boolean;
   isUnderline?: boolean;
-  textAlign?: 'left' | 'center' | 'right';
   color?: string;
   onTextChange: (id: string, newText: string) => void;
   onTextBlur: (id: string) => void;
@@ -27,7 +26,7 @@ interface TextBoxProps {
 
 const TextBox: React.FC<TextBoxProps> = ({
   id, x, y, width, height, text, gradient, isEditing, fontSize, selected,
-  isBold, isItalic, isUnderline, textAlign, color,
+  isBold, isItalic, isUnderline, color,
   onTextChange, onTextBlur, onTextClick, onTextDoubleClick, onMouseDown, onResizeStart
 }) => {
   // Build dynamic style classes and styles
@@ -38,15 +37,10 @@ const TextBox: React.FC<TextBoxProps> = ({
     isUnderline ? 'underline' : ''
   ].filter(Boolean).join(' ');
 
-  const alignmentClasses = {
-    left: 'justify-start text-left',
-    center: 'justify-center text-center', 
-    right: 'justify-end text-right'
-  };
 
   const textStyle = {
     fontSize: `${fontSize}px`,
-    wordWrap: 'break-word' as const,
+    whiteSpace: 'pre' as const,
     overflow: 'hidden' as const,
     color: color || 'transparent', // Use color if provided, otherwise transparent for gradient
   };
@@ -59,20 +53,19 @@ const TextBox: React.FC<TextBoxProps> = ({
       style={{ left: x, top: y, width, height }}
     >
       {isEditing ? (
-        <input
-          type="text"
+        <textarea
           value={text}
           onChange={e => onTextChange(id, e.target.value)}
           onBlur={() => onTextBlur(id)}
-          onKeyDown={e => { if (e.key === 'Enter') onTextBlur(id); }}
+          wrap="off"
           className="w-full h-full bg-transparent border-2 border-dashed border-gray-400 rounded px-2 py-1 font-bold focus:outline-none focus:border-blue-500 resize-none"
-          style={{ fontSize: `${fontSize}px` }}
+          style={{ fontSize: `${fontSize}px`, whiteSpace: 'pre' }}
           autoFocus
         />
       ) : (
         <div className="relative w-full h-full">
           <div
-            className={`${textClasses} ${alignmentClasses[textAlign || 'center']} ${gradientClasses}`}
+            className={`${textClasses} justify-center text-center ${gradientClasses}`}
             onClick={e => onTextClick(id, e)}
             onDoubleClick={() => onTextDoubleClick(id)}
             onMouseDown={e => onMouseDown(e, id)}

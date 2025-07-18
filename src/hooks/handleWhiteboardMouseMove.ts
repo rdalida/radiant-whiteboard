@@ -128,7 +128,7 @@ export function handleWhiteboardMouseMove({
     const newWidth = Math.max(100, resizeStart.width + deltaX);
     const newHeight = Math.max(30, resizeStart.height + deltaY);
     const scaleFactor = Math.max(newWidth / resizeStart.width, newHeight / resizeStart.height);
-    const newFontSize = Math.max(12, Math.min(72, resizeStart.fontSize * scaleFactor));
+    const newFontSize = resizeStart.fontSize * scaleFactor;
     setTextBoxesResize((textBoxes: any[]) => textBoxes.map((box: any) =>
       box.id === resizingBox ? {
         ...box,

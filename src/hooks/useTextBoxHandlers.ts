@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { calculateFontSizeToFit } from '../utils/fontUtils';
 
 interface TextBox {
   id: string;
@@ -39,11 +40,13 @@ export function useTextBoxHandlers(textBoxes: TextBox[], setTextBoxes: (fn: any)
     }
   }, [setSelectedBoxes]);
 
-  // Change text
+  // Change text and adjust font size to always fit width
   const handleTextChange = useCallback((id: string, newText: string) => {
-    setTextBoxes((prev: TextBox[]) => prev.map(box => 
-      box.id === id ? { ...box, text: newText } : box
-    ));
+    setTextBoxes((prev: TextBox[]) => prev.map(box => {
+      if (box.id !== id) return box;
+      const newFont = calculateFontSizeToFit(newText, box.width);
+      return { ...box, text: newText, fontSize: newFont };
+    }));
   }, [setTextBoxes]);
 
   // Blur (finish editing)
