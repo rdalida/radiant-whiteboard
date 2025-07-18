@@ -57,7 +57,7 @@ interface Shape {
 
 import { gradients } from './gradients';
 import { WhiteboardData } from './hooks/useFirebaseWhiteboard';
-import WhiteboardSidebar from './components/WhiteboardSidebar';
+import WhiteboardSidebarSheet from './components/WhiteboardSidebarSheet';
 import { useUser } from '@clerk/clerk-react';
 
 function App() {
@@ -651,9 +651,9 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         />
       </div>
 
-      {/* Sidebar - only show when user is signed in */}
+      {/* Sidebar Sheet - only show when user is signed in */}
       {user && (
-        <WhiteboardSidebar
+        <WhiteboardSidebarSheet
           onNewWhiteboard={handleNewWhiteboard}
           onLoadWhiteboard={handleLoadWhiteboard}
           currentWhiteboardId={currentWhiteboardId}
@@ -670,8 +670,8 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       <div
         ref={whiteboardRef}
         className={`relative w-full h-screen select-none pt-24 ${
-          user ? 'pl-80' : '' // Add left padding when sidebar is shown
-        } ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+          isPanning ? 'cursor-grabbing' : 'cursor-crosshair'
+        }`}
         onClick={handleWhiteboardClick}
         onMouseDown={e => handleWhiteboardMouseDown({
           e,
