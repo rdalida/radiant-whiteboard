@@ -108,6 +108,31 @@ export const useFirebaseWhiteboard = () => {
     }
   };
 
+  // Update whiteboard title
+  const updateWhiteboardTitle = async (
+    id: string,
+    title: string
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const docRef = doc(db, 'whiteboards', id);
+      await updateDoc(docRef, {
+        title,
+        updatedAt: Timestamp.now()
+      });
+      
+      setLoading(false);
+      return true;
+    } catch (err) {
+      console.error('Error updating whiteboard title:', err);
+      setError('Failed to update whiteboard title');
+      setLoading(false);
+      return false;
+    }
+  };
+
   // Load a specific whiteboard
   const loadWhiteboard = async (id: string): Promise<WhiteboardData | null> => {
     setLoading(true);
@@ -187,6 +212,7 @@ export const useFirebaseWhiteboard = () => {
   return {
     saveWhiteboard,
     updateWhiteboard,
+    updateWhiteboardTitle,
     loadWhiteboard,
     getAllWhiteboards,
     deleteWhiteboard,

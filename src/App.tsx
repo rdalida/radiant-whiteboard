@@ -57,14 +57,16 @@ interface Shape {
 }
 
 import { gradients } from './gradients';
-import { WhiteboardData } from './hooks/useFirebaseWhiteboard';
+import { WhiteboardData, useFirebaseWhiteboard } from './hooks/useFirebaseWhiteboard';
 import WhiteboardSidebarSheet from './components/WhiteboardSidebarSheet';
 import { useUser } from '@clerk/clerk-react';
 
 function App() {
   const { user } = useUser();
+  const { updateWhiteboard, saveWhiteboard, updateWhiteboardTitle } = useFirebaseWhiteboard();
   const [currentWhiteboardId, setCurrentWhiteboardId] = useState<string | null>(null);
-  // Removed unused currentWhiteboardTitle state
+  const [currentWhiteboardTitle, setCurrentWhiteboardTitle] = useState<string>('New whiteboard');
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   
   const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -150,6 +152,53 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [lastMousePos]);
+
+  // Auto-save whiteboard content when it changes
+  React.useEffect(() => {
+    if (currentWhiteboardId && user) {
+      const saveTimeout = setTimeout(async () => {
+        try {
+          await updateWhiteboard(currentWhiteboardId, {
+            textBoxes,
+            shapes,
+            images,
+            drawingPaths,
+            mindMapNodes,
+          });
+        } catch (error) {
+          console.error('Auto-save error:', error);
+        }
+      }, 2000); // Auto-save after 2 seconds of inactivity
+      
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [textBoxes, shapes, images, drawingPaths, mindMapNodes, currentWhiteboardId, user, updateWhiteboard]);
+
+  // Auto-save new whiteboard when content is added
+  React.useEffect(() => {
+    if (!currentWhiteboardId && user && (textBoxes.length > 0 || shapes.length > 0 || images.length > 0 || drawingPaths.length > 0 || mindMapNodes.length > 0)) {
+      const saveTimeout = setTimeout(async () => {
+        try {
+          const whiteboardId = await saveWhiteboard(currentWhiteboardTitle, {
+            textBoxes,
+            shapes,
+            images,
+            drawingPaths,
+            mindMapNodes,
+          });
+          
+          if (whiteboardId) {
+            setCurrentWhiteboardId(whiteboardId);
+            setRefreshTrigger(prev => prev + 1);
+          }
+        } catch (error) {
+          console.error('Auto-save new whiteboard error:', error);
+        }
+      }, 3000); // Auto-save after 3 seconds of content being added
+      
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [textBoxes, shapes, images, drawingPaths, mindMapNodes, currentWhiteboardId, user, currentWhiteboardTitle, saveWhiteboard]);
 
   // Restore resize for text box
   const handleResizeStart = (e: React.MouseEvent, id: string) => {
@@ -608,7 +657,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     
     // Set current whiteboard info
     setCurrentWhiteboardId(data.id || null);
-    // setCurrentWhiteboardTitle(data.title || 'Untitled Whiteboard');
+    setCurrentWhiteboardTitle(data.title || 'New whiteboard');
     
     // Clear selections
     setSelectedBoxes([]);
@@ -627,13 +676,46 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     
     // Reset whiteboard info
     setCurrentWhiteboardId(null);
-    // setCurrentWhiteboardTitle('Untitled Whiteboard');
+    setCurrentWhiteboardTitle('New whiteboard');
     
     // Clear selections
     setSelectedBoxes([]);
     setSelectedShapes([]);
     setSelectedMindMapNodes([]);
     setActiveMindMapNode(null);
+  };
+
+  // Function to update whiteboard title
+  const handleTitleChange = async (newTitle: string) => {
+    setCurrentWhiteboardTitle(newTitle);
+    
+    // If we don't have a whiteboard ID, create a new one
+    if (!currentWhiteboardId && user) {
+      try {
+        const whiteboardId = await saveWhiteboard(newTitle, {
+          textBoxes,
+          shapes,
+          images,
+          drawingPaths,
+          mindMapNodes,
+        });
+        
+        if (whiteboardId) {
+          setCurrentWhiteboardId(whiteboardId);
+          setRefreshTrigger(prev => prev + 1);
+        }
+      } catch (error) {
+        console.error('Error creating new whiteboard:', error);
+      }
+    } else if (currentWhiteboardId && user) {
+      try {
+        // Update the title in Firebase
+        await updateWhiteboardTitle(currentWhiteboardId, newTitle);
+        setRefreshTrigger(prev => prev + 1);
+      } catch (error) {
+        console.error('Error updating whiteboard title:', error);
+      }
+    }
   };
 
   return (
@@ -658,11 +740,15 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           onNewWhiteboard={handleNewWhiteboard}
           onLoadWhiteboard={handleLoadWhiteboard}
           currentWhiteboardId={currentWhiteboardId}
+          refreshTrigger={refreshTrigger}
         />
       )}
 
       {/* Header (fixed, always visible) */}
-      <Header />
+      <Header 
+        currentWhiteboardTitle={currentWhiteboardTitle}
+        onTitleChange={handleTitleChange}
+      />
 
       {/* Floating Toolbar */}
       <Toolbar

@@ -15,12 +15,14 @@ interface WhiteboardSidebarSheetProps {
   onNewWhiteboard: () => void;
   onLoadWhiteboard: (data: WhiteboardData) => void;
   currentWhiteboardId?: string | null;
+  refreshTrigger?: number; // Add refresh trigger
 }
 
 const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   onNewWhiteboard,
   onLoadWhiteboard,
-  currentWhiteboardId
+  currentWhiteboardId,
+  refreshTrigger
 }) => {
   const { user } = useUser();
   const [whiteboards, setWhiteboards] = useState<WhiteboardData[]>([]);
@@ -33,6 +35,13 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
       loadWhiteboards();
     }
   }, [user]);
+
+  // Refresh whiteboards when refreshTrigger changes
+  useEffect(() => {
+    if (user && refreshTrigger) {
+      loadWhiteboards();
+    }
+  }, [user, refreshTrigger]);
 
   const loadWhiteboards = async () => {
     setLoading(true);
