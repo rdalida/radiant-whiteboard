@@ -15,7 +15,8 @@ export interface MindMapNodeData {
 interface MindMapNodeProps {
   node: MindMapNodeData;
   isActive: boolean;
-  onSelect: (id: string) => void;
+  isSelected: boolean;
+  onSelect: (id: string, e?: React.MouseEvent) => void;
   onTextChange: (id: string, text: string) => void;
   onResizeStart: (e: React.MouseEvent, id: string) => void;
   onDelete: (id: string) => void;
@@ -25,6 +26,7 @@ interface MindMapNodeProps {
 const MindMapNode: React.FC<MindMapNodeProps> = ({
   node,
   isActive,
+  isSelected,
   onSelect,
   onTextChange,
   onResizeStart,
@@ -65,18 +67,21 @@ const MindMapNode: React.FC<MindMapNodeProps> = ({
   return (
     <div
       className={`absolute border-2 rounded-lg shadow-md cursor-pointer transition-all duration-200 ${
-        isActive ? 'border-blue-500 shadow-lg' : 'border-gray-300 hover:border-gray-400'
+        isActive ? 'border-blue-500 shadow-lg' : 
+        isSelected ? 'border-blue-400 shadow-md' : 
+        'border-gray-300 hover:border-gray-400'
       } ${node.gradient}`}
       style={{
         left: node.x,
         top: node.y,
         width: node.width,
         height: node.height,
-        zIndex: isActive ? 20 : 10
+        zIndex: isActive ? 20 : isSelected ? 15 : 10
       }}
+      data-mindmap-node-id={node.id}
       onClick={(e) => {
         e.stopPropagation();
-        onSelect(node.id);
+        onSelect(node.id, e);
       }}
       onDoubleClick={handleDoubleClick}
       onMouseDown={(e) => {

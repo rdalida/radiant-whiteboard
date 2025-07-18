@@ -16,6 +16,9 @@ interface UseKeyboardShortcutsProps {
   getRandomGradient: () => any;
   // Mind Map props
   activeMindMapNode: string | null;
+  selectedMindMapNodes: string[];
+  setSelectedMindMapNodes: React.Dispatch<React.SetStateAction<string[]>>;
+  setMindMapNodes: React.Dispatch<React.SetStateAction<any[]>>;
   addMindMapNode: (text: string, parentId?: string | null, x?: number, y?: number) => void;
   addSiblingNode: (currentNodeId: string) => void;
   addChildNode: (currentNodeId: string) => void;
@@ -36,6 +39,9 @@ export function useKeyboardShortcuts({
   activeTool,
   getRandomGradient,
   activeMindMapNode,
+  selectedMindMapNodes,
+  setSelectedMindMapNodes,
+  setMindMapNodes,
   addMindMapNode,
   addSiblingNode,
   addChildNode,
@@ -71,7 +77,7 @@ export function useKeyboardShortcuts({
           }
         ]);
       }
-      if ((e.key === 's' || e.key === 'S') && document.activeElement?.tagName !== 'INPUT') {
+      if ((e.key === 'd' || e.key === 'D') && document.activeElement?.tagName !== 'INPUT') {
         e.preventDefault();
         setShapes(shapes => [
           ...shapes,
@@ -88,11 +94,28 @@ export function useKeyboardShortcuts({
           }
         ]);
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && (selectedBoxes.length > 0 || selectedShapes.length > 0)) {
-        setTextBoxes(boxes => boxes.filter(box => !selectedBoxes.includes(box.id)));
-        setShapes(shapes => shapes.filter(shape => !selectedShapes.includes(shape.id)));
-        setSelectedBoxes([]);
-        setSelectedShapes([]);
+      if ((e.key === 'Delete' || e.key === 'Backspace') && (selectedBoxes.length > 0 || selectedShapes.length > 0 || selectedMindMapNodes.length > 0)) {
+        e.preventDefault();
+        
+        // Delete selected text boxes
+        if (selectedBoxes.length > 0) {
+          setTextBoxes(boxes => boxes.filter(box => !selectedBoxes.includes(box.id)));
+          setSelectedBoxes([]);
+        }
+        
+        // Delete selected shapes
+        if (selectedShapes.length > 0) {
+          setShapes(shapes => shapes.filter(shape => !selectedShapes.includes(shape.id)));
+          setSelectedShapes([]);
+        }
+        
+        // Delete selected mind map nodes
+        if (selectedMindMapNodes.length > 0) {
+          selectedMindMapNodes.forEach(nodeId => {
+            handleMindMapNodeDelete(nodeId);
+          });
+          setSelectedMindMapNodes([]);
+        }
       }
       
       // Mind Map shortcuts
@@ -115,8 +138,41 @@ export function useKeyboardShortcuts({
         e.preventDefault();
         handleMindMapNodeDelete(activeMindMapNode);
       }
+      
+      // Arrow key movement for selected mind map nodes
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') && selectedMindMapNodes.length > 0 && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        const moveDistance = e.shiftKey ? 10 : 1; // Hold Shift for faster movement
+        
+        setMindMapNodes(nodes => 
+          nodes.map(node => {
+            if (selectedMindMapNodes.includes(node.id)) {
+              let newX = node.x;
+              let newY = node.y;
+              
+              switch (e.key) {
+                case 'ArrowUp':
+                  newY -= moveDistance;
+                  break;
+                case 'ArrowDown':
+                  newY += moveDistance;
+                  break;
+                case 'ArrowLeft':
+                  newX -= moveDistance;
+                  break;
+                case 'ArrowRight':
+                  newX += moveDistance;
+                  break;
+              }
+              
+              return { ...node, x: newX, y: newY };
+            }
+            return node;
+          })
+        );
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBoxes, selectedShapes, lastMousePos, textBoxes, shapes, activeTool, activeMindMapNode]);
+  }, [selectedBoxes, selectedShapes, selectedMindMapNodes, lastMousePos, textBoxes, shapes, activeTool, activeMindMapNode]);
 }

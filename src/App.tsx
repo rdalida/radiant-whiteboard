@@ -71,6 +71,7 @@ function App() {
   // Mind Map state
   const [mindMapNodes, setMindMapNodes] = useState<MindMapNodeData[]>([]);
   const [activeMindMapNode, setActiveMindMapNode] = useState<string | null>(null);
+  const [selectedMindMapNodes, setSelectedMindMapNodes] = useState<string[]>([]);
   const [draggingMindMapNode, setDraggingMindMapNode] = useState<string | null>(null);
   const [dragMindMapStart, setDragMindMapStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
   const [resizingMindMapNode, setResizingMindMapNode] = useState<string | null>(null);
@@ -204,6 +205,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     if (!e.ctrlKey && !e.metaKey) {
       setSelectedBoxes([]);
       setSelectedShapes([]);
+      setSelectedMindMapNodes([]);
       setActiveMindMapNode(null);
     }
   };
@@ -233,8 +235,19 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
   } = useShapeHandlers(shapes, setShapes, setSelectedShapes, setSelectedBoxes, getRandomGradient);
 
   // Mind Map handlers
-  const handleMindMapNodeSelect = (id: string) => {
-    setActiveMindMapNode(id);
+  const handleMindMapNodeSelect = (id: string, e?: React.MouseEvent) => {
+    if (e && (e.ctrlKey || e.metaKey)) {
+      // Multi-select with Ctrl/Cmd
+      setSelectedMindMapNodes(prev => 
+        prev.includes(id) 
+          ? prev.filter(nodeId => nodeId !== id)
+          : [...prev, id]
+      );
+    } else {
+      // Single select
+      setSelectedMindMapNodes([id]);
+      setActiveMindMapNode(id);
+    }
     // Clear other selections
     setSelectedBoxes([]);
     setSelectedShapes([]);
@@ -310,6 +323,12 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     
     const mouseX = (e.clientX - rect.left - pan.x) / zoom;
     const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+    
+    // If the clicked node is not selected, select it first
+    if (!selectedMindMapNodes.includes(id)) {
+      setSelectedMindMapNodes([id]);
+      setActiveMindMapNode(id);
+    }
     
     setDraggingMindMapNode(id);
     setDragMindMapStart({
@@ -544,6 +563,9 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     activeTool,
     getRandomGradient,
     activeMindMapNode,
+    selectedMindMapNodes,
+    setSelectedMindMapNodes,
+    setMindMapNodes,
     addMindMapNode,
     addSiblingNode,
     addChildNode,
@@ -679,16 +701,25 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             const mouseX = (e.clientX - rect.left - pan.x) / zoom;
             const mouseY = (e.clientY - rect.top - pan.y) / zoom;
             
-            const newX = mouseX - dragMindMapStart.offsetX;
-            const newY = mouseY - dragMindMapStart.offsetY;
+            const deltaX = mouseX - dragMindMapStart.x;
+            const deltaY = mouseY - dragMindMapStart.y;
             
             setMindMapNodes(nodes => 
-              nodes.map(node => 
-                node.id === draggingMindMapNode 
-                  ? { ...node, x: newX, y: newY }
-                  : node
-              )
+              nodes.map(node => {
+                if (selectedMindMapNodes.includes(node.id)) {
+                  return { ...node, x: node.x + deltaX, y: node.y + deltaY };
+                }
+                return node;
+              })
             );
+            
+            // Update drag start position for next move
+            setDragMindMapStart({
+              x: mouseX,
+              y: mouseY,
+              offsetX: dragMindMapStart.offsetX,
+              offsetY: dragMindMapStart.offsetY
+            });
           }
         }}
         onMouseUp={() => {
@@ -717,8 +748,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             whiteboardRef,
             textBoxes,
             shapes,
+            mindMapNodes,
             setSelectedBoxes,
             setSelectedShapes,
+            setSelectedMindMapNodes,
             setMarquee
           });
           
@@ -760,8 +793,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             whiteboardRef,
             textBoxes,
             shapes,
+            mindMapNodes,
             setSelectedBoxes,
             setSelectedShapes,
+            setSelectedMindMapNodes,
             setMarquee
           });
           
@@ -822,6 +857,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             key={node.id}
             node={node}
             isActive={activeMindMapNode === node.id}
+            isSelected={selectedMindMapNodes.includes(node.id)}
             onSelect={handleMindMapNodeSelect}
             onTextChange={handleMindMapNodeTextChange}
             onResizeStart={handleMindMapNodeResizeStart}

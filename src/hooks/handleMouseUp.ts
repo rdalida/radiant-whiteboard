@@ -25,8 +25,10 @@ interface HandleMouseUpParams {
   whiteboardRef: RefObject<HTMLDivElement>;
   textBoxes: any[];
   shapes: any[];
+  mindMapNodes: any[];
   setSelectedBoxes: (val: string[]) => void;
   setSelectedShapes: (val: string[]) => void;
+  setSelectedMindMapNodes: (val: string[]) => void;
   setMarquee: (val: any) => void;
 }
 
@@ -55,8 +57,10 @@ export function handleMouseUp({
   whiteboardRef,
   textBoxes,
   shapes,
+  mindMapNodes,
   setSelectedBoxes,
   setSelectedShapes,
+  setSelectedMindMapNodes,
   setMarquee
 }: HandleMouseUpParams) {
   if (isDrawing && currentPath) {
@@ -102,8 +106,16 @@ export function handleMouseUp({
       const sy2 = shape.y + shape.height;
       return sx2 > x1 && sx1 < x2 && sy2 > y1 && sy1 < y2;
     }).map((shape: any) => shape.id);
+    const selectedMindMapNodeIds = mindMapNodes.filter((node: any) => {
+      const nx1 = node.x;
+      const ny1 = node.y;
+      const nx2 = node.x + node.width;
+      const ny2 = node.y + node.height;
+      return nx2 > x1 && nx1 < x2 && ny2 > y1 && ny1 < y2;
+    }).map((node: any) => node.id);
     setSelectedBoxes(selectedBoxes);
     setSelectedShapes(selectedShapesIds);
+    setSelectedMindMapNodes(selectedMindMapNodeIds);
     setMarquee(null);
   }
 }
