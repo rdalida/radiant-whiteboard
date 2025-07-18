@@ -17,8 +17,9 @@ interface HandleWhiteboardMouseMoveParams {
   currentArrow: any;
   setCurrentArrow: (arrow: any) => void;
   draggingArrow: string | null;
-  dragArrowStart: { startX:number; startY:number; endX:number; endY:number; mouseX:number; mouseY:number } | null;
+  dragArrowStart: { mouseX: number; mouseY: number; arrowPositions: { [id: string]: { startX: number; startY: number; endX: number; endY: number } } } | null;
   setArrows: (fn: any) => void;
+  selectedArrows: string[];
   draggingShape: string | null;
   dragShapeStart: { x: number; y: number; offsetX: number; offsetY: number } | null;
   setShapes: (fn: any) => void;
@@ -59,6 +60,7 @@ export function handleWhiteboardMouseMove({
   draggingArrow,
   dragArrowStart,
   setArrows,
+  selectedArrows,
   draggingShape,
   dragShapeStart,
   setShapes,
@@ -123,13 +125,25 @@ export function handleWhiteboardMouseMove({
     if (!rect) return;
     const mouseX = (e.clientX - rect.left - pan.x) / zoom;
     const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-    const dx = mouseX - dragArrowStart.mouseX;
-    const dy = mouseY - dragArrowStart.mouseY;
-    setArrows((prev: any[]) => prev.map((arrow: any) =>
-      arrow.id === draggingArrow
-        ? { ...arrow, startX: dragArrowStart.startX + dx, startY: dragArrowStart.startY + dy, endX: dragArrowStart.endX + dx, endY: dragArrowStart.endY + dy }
-        : arrow
-    ));
+    
+    // Calculate delta from current mouse position to drag start mouse position
+    const deltaX = mouseX - dragArrowStart.mouseX;
+    const deltaY = mouseY - dragArrowStart.mouseY;
+    
+    setArrows((prev: any[]) => prev.map((arrow: any) => {
+      // Move all selected arrows using their original positions
+      if (selectedArrows.includes(arrow.id) && dragArrowStart.arrowPositions[arrow.id]) {
+        const originalPos = dragArrowStart.arrowPositions[arrow.id];
+        return { 
+          ...arrow, 
+          startX: originalPos.startX + deltaX, 
+          startY: originalPos.startY + deltaY, 
+          endX: originalPos.endX + deltaX, 
+          endY: originalPos.endY + deltaY 
+        };
+      }
+      return arrow;
+    }));
     return;
   }
   if (draggingBox && dragBoxStart) {

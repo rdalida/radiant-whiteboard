@@ -1,68 +1,62 @@
-import { Dispatch, SetStateAction } from 'react';
-import { Arrow } from '../ArrowElement';
+import { useCallback } from 'react';
 
-interface UseArrowHandlersProps {
-  arrows: Arrow[];
-  setArrows: Dispatch<SetStateAction<Arrow[]>>;
-  setSelectedArrows: Dispatch<SetStateAction<string[]>>;
-  setSelectedBoxes: Dispatch<SetStateAction<string[]>>;
-  setSelectedShapes: Dispatch<SetStateAction<string[]>>;
-  setSelectedImages: Dispatch<SetStateAction<string[]>>;
-  whiteboardRef: React.RefObject<HTMLDivElement>;
-  pan: { x: number; y: number };
-  zoom: number;
-  setDraggingArrow: Dispatch<SetStateAction<string | null>>;
-  setDragArrowStart: Dispatch<SetStateAction<{ startX:number; startY:number; endX:number; endY:number; mouseX:number; mouseY:number } | null>>;
+interface Arrow {
+  id: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  gradient: string;
+  strokeStyle: 'solid' | 'dashed';
 }
 
-export function useArrowHandlers({
-  arrows,
-  setArrows,
-  setSelectedArrows,
-  setSelectedBoxes,
-  setSelectedShapes,
-  setSelectedImages,
-  whiteboardRef,
-  pan,
-  zoom,
-  setDraggingArrow,
-  setDragArrowStart
-}: UseArrowHandlersProps) {
-  const handleArrowClick = (e: React.MouseEvent, id: string) => {
+export function useArrowHandlers(
+  setArrows: (fn: any) => void, 
+  setSelectedArrows: (fn: any) => void,
+  getRandomGradient: () => { name: string; value: string; preview: string }
+) {
+  const handleArrowClick = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    
     if (e.ctrlKey || e.metaKey) {
-      setSelectedArrows(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+      setSelectedArrows((prev: string[]) =>
+        prev.includes(id) ? prev.filter(aid => aid !== id) : [...prev, id]
+      );
     } else {
-      setSelectedArrows(prev => (prev.length === 1 && prev[0] === id ? [] : [id]));
-      setSelectedBoxes([]);
-      setSelectedShapes([]);
-      setSelectedImages([]);
+      setSelectedArrows([id]);
     }
-  };
+  }, [setSelectedArrows]);
 
-  const handleArrowMouseDown = (e: React.MouseEvent, id: string) => {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    const rect = whiteboardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const arrow = arrows.find(a => a.id === id);
-    if (!arrow) return;
-    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
-    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
-    setDraggingArrow(id);
-    setDragArrowStart({
-      startX: arrow.startX,
-      startY: arrow.startY,
-      endX: arrow.endX,
-      endY: arrow.endY,
-      mouseX,
-      mouseY
-    });
-  };
+  const handleArrowDelete = useCallback((id: string) => {
+    setArrows((prev: Arrow[]) => prev.filter(a => a.id !== id));
+    setSelectedArrows((prev: string[]) => prev.filter(aid => aid !== id));
+  }, [setArrows, setSelectedArrows]);
 
-  const handleArrowDelete = (id: string) => {
-    setArrows(arrows => arrows.filter(a => a.id !== id));
-  };
+  const handleToggleStrokeStyle = useCallback((id: string) => {
+    setArrows((prev: Arrow[]) => 
+      prev.map(arrow => 
+        arrow.id === id 
+          ? { ...arrow, strokeStyle: arrow.strokeStyle === 'solid' ? 'dashed' : 'solid' } 
+          : arrow
+      )
+    );
+  }, [setArrows]);
 
-  return { handleArrowClick, handleArrowMouseDown, handleArrowDelete };
+  const handleChangeArrowGradient = useCallback((id: string) => {
+    const randomGradient = getRandomGradient();
+    setArrows((prev: Arrow[]) => 
+      prev.map(arrow => 
+        arrow.id === id 
+          ? { ...arrow, gradient: randomGradient.value } 
+          : arrow
+      )
+    );
+  }, [setArrows, getRandomGradient]);
+
+  return {
+    handleArrowClick,
+    handleArrowDelete,
+    handleToggleStrokeStyle,
+    handleChangeArrowGradient
+  };
 }

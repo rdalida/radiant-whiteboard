@@ -8,14 +8,16 @@ import {
   Italic,
   Underline,
   Type,
-  ChevronDown
+  ChevronDown,
+  Minus,
+  MoreHorizontal
 } from 'lucide-react';
 
 interface FloatingToolbarProps {
   x: number;
   y: number;
   width: number;
-  elementType: 'shape' | 'textbox' | 'image';
+  elementType: 'shape' | 'textbox' | 'image' | 'arrow';
   // Existing actions
   onChangeGradient?: () => void;
   onDelete: () => void;
@@ -33,6 +35,14 @@ interface FloatingToolbarProps {
   onToggleItalic?: () => void;
   onToggleUnderline?: () => void;
   onColorChange?: (color: string) => void;
+  
+  // Arrow-specific props
+  arrowStyle?: {
+    strokeStyle: 'solid' | 'dashed';
+    gradient: string;
+  };
+  onToggleStrokeStyle?: () => void;
+  onChangeArrowGradient?: () => void;
 }
 
 const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
@@ -49,6 +59,9 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   onToggleItalic,
   onToggleUnderline,
   onColorChange,
+  arrowStyle,
+  onToggleStrokeStyle,
+  onChangeArrowGradient,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef<HTMLDivElement>(null);
@@ -189,6 +202,48 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           </div>
         </>
       )}
+
+      {/* Arrow Controls - only for arrows */}
+      {elementType === 'arrow' && (
+        <>
+          {/* Stroke Style Toggle */}
+          <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleStrokeStyle?.();
+              }}
+              className={`p-1.5 rounded transition-colors ${
+                arrowStyle?.strokeStyle === 'dashed' 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title={arrowStyle?.strokeStyle === 'dashed' ? 'Switch to solid line' : 'Switch to dashed line'}
+            >
+              {arrowStyle?.strokeStyle === 'dashed' ? (
+                <MoreHorizontal className="w-4 h-4" />
+              ) : (
+                <Minus className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          {/* Arrow Gradient */}
+          <div className="border-r border-gray-200 pr-2 mr-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onChangeArrowGradient?.();
+              }}
+              className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+              title="Change arrow color"
+            >
+              <Palette className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+        </>
+      )}
+
       {/* Change Gradient/Color - only for shapes and textboxes */}
       {(elementType === 'shape' || elementType === 'textbox') && onChangeGradient && (
         <button

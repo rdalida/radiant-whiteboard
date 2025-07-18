@@ -79,6 +79,7 @@ The app follows a modular architecture with clear separation of concerns:
 - `C` - Circle tool
 - `D` - Diamond tool
 - `P` - Pen tool
+- `Shift + Click and Drag` - Create arrow
 - `M` - Create mind map node
 - `Tab` - Add sibling node (mind map)
 - `Enter` - Add child node (mind map)

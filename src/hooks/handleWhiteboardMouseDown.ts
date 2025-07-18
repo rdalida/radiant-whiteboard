@@ -62,12 +62,15 @@ export function handleWhiteboardMouseDown({
       }
       if (e.shiftKey) {
         setIsDrawingArrow(true);
+        const randomGradient = getRandomGradient();
         setCurrentArrow({
           id: Date.now().toString() + Math.random().toString(36).slice(2),
           startX: x,
           startY: y,
           endX: x,
-          endY: y
+          endY: y,
+          gradient: randomGradient.value,
+          strokeStyle: 'solid'
         });
         return;
       }
