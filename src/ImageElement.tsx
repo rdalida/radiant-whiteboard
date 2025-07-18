@@ -7,9 +7,10 @@ interface ImageElementProps {
   src: string;
   width: number;
   height: number;
+  selected: boolean;
+  onClick: (e: React.MouseEvent, id: string) => void;
   onMouseDown: (e: React.MouseEvent, id: string) => void;
   onResizeStart: (e: React.MouseEvent, id: string) => void;
-  onDelete: (id: string) => void;
 }
 
 const ImageElement: React.FC<ImageElementProps> = ({
@@ -19,14 +20,16 @@ const ImageElement: React.FC<ImageElementProps> = ({
   src,
   width,
   height,
+  selected,
+  onClick,
   onMouseDown,
   onResizeStart,
-  onDelete,
 }) => {
   return (
     <div
-      className="absolute group cursor-move"
+      className={`absolute cursor-move${selected ? ' ring-2 ring-blue-400 z-20' : ''}`}
       style={{ left: x, top: y, width, height, zIndex: 5 }}
+      onClick={e => onClick(e, id)}
       onMouseDown={e => onMouseDown(e, id)}
     >
       <img
@@ -36,25 +39,14 @@ const ImageElement: React.FC<ImageElementProps> = ({
         draggable={false}
         style={{ pointerEvents: 'none', userSelect: 'none' }}
       />
-      {/* Delete button */}
-      <div className="absolute -top-8 right-0 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={e => {
-            e.stopPropagation();
-            onDelete(id);
-          }}
-          className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-          title="Delete image"
-        >
-          ×
-        </button>
-      </div>
-      {/* Resize handle */}
-      <div
-        className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white shadow-lg"
-        onMouseDown={e => onResizeStart(e, id)}
-        title="Drag to resize"
-      />
+      {/* Resize handle - only show when selected */}
+      {selected && (
+        <div
+          className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow-lg"
+          onMouseDown={e => onResizeStart(e, id)}
+          title="Drag to resize"
+        />
+      )}
     </div>
   );
 };

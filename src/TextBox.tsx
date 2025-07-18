@@ -17,17 +17,15 @@ interface TextBoxProps {
   onTextDoubleClick: (id: string) => void;
   onMouseDown: (e: React.MouseEvent, id: string) => void;
   onResizeStart: (e: React.MouseEvent, id: string) => void;
-  onDelete: (id: string) => void;
-  onChangeGradient: (id: string) => void;
 }
 
 const TextBox: React.FC<TextBoxProps> = ({
   id, x, y, width, height, text, gradient, isEditing, fontSize, selected,
-  onTextChange, onTextBlur, onTextClick, onTextDoubleClick, onMouseDown, onResizeStart, onDelete, onChangeGradient
+  onTextChange, onTextBlur, onTextClick, onTextDoubleClick, onMouseDown, onResizeStart
 }) => {
   return (
     <div
-      className={`absolute group${selected && !isEditing ? ' ring-2 ring-blue-400 z-20' : ''} hover:ring-2 hover:ring-gray-400`}
+      className={`absolute${selected && !isEditing ? ' ring-2 ring-blue-400 z-20' : ''}`}
       style={{ left: x, top: y, width, height }}
     >
       {isEditing ? (
@@ -53,31 +51,14 @@ const TextBox: React.FC<TextBoxProps> = ({
           >
             {text}
           </div>
-          {/* Control buttons */}
-          <div className="absolute -top-8 -right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="relative">
-              <button
-                onClick={e => { e.stopPropagation(); onChangeGradient(id); }}
-                className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-blue-600 transition-colors"
-                title="Change gradient"
-              >
-                🎨
-              </button>
-            </div>
-            <button
-              onClick={e => { e.stopPropagation(); onDelete(id); }}
-              className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-              title="Delete"
-            >
-              ×
-            </button>
-          </div>
-          {/* Resize handle */}
-          <div
-            className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity border-2 border-white shadow-lg"
-            onMouseDown={e => onResizeStart(e, id)}
-            title="Drag to resize"
-          />
+          {/* Resize handle - only show when selected */}
+          {selected && (
+            <div
+              className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow-lg"
+              onMouseDown={e => onResizeStart(e, id)}
+              title="Drag to resize"
+            />
+          )}
         </div>
       )}
     </div>

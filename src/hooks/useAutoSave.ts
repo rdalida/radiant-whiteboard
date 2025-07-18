@@ -47,6 +47,7 @@ export const useAutoSave = (
       const success = await updateWhiteboard(currentWhiteboardId, currentData);
       if (success) {
         lastSavedDataRef.current = currentDataString;
+        console.log('💾 Auto-save successful for whiteboard:', currentWhiteboardId);
         setSaveStatus('saved');
         
         // Clear the "saved" indicator after 2 seconds
@@ -57,10 +58,12 @@ export const useAutoSave = (
           setSaveStatus('idle');
         }, 2000);
       } else {
+        console.error('💥 Auto-save failed - updateWhiteboard returned false');
         setSaveStatus('error');
         console.error('Auto-save failed - updateWhiteboard returned false');
       }
     } catch (error) {
+      console.error('💥 Auto-save error:', error);
       setSaveStatus('error');
       console.error('Auto-save error:', error);
     }
@@ -84,6 +87,7 @@ export const useAutoSave = (
     try {
       const whiteboardId = await saveWhiteboard(currentTitle, currentData);
       if (whiteboardId) {
+        console.log('💾 New whiteboard saved successfully:', whiteboardId);
         setSaveStatus('saved');
         
         // Clear the "saved" indicator after 2 seconds
@@ -96,10 +100,12 @@ export const useAutoSave = (
         
         return whiteboardId;
       } else {
+        console.error('💥 Failed to save new whiteboard - no ID returned');
         setSaveStatus('error');
         console.error('Failed to save new whiteboard - no ID returned');
       }
     } catch (error) {
+      console.error('💥 Auto-save new whiteboard error:', error);
       setSaveStatus('error');
       console.error('Auto-save new whiteboard error:', error);
     }

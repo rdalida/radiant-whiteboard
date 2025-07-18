@@ -10,6 +10,7 @@ import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
 import ShapeElement from './ShapeElement';
+import FloatingToolbar from './FloatingToolbar';
 import MindMapNode, { MindMapNodeData } from './MindMapNode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutoSave } from './hooks/useAutoSave';
@@ -67,6 +68,16 @@ function App() {
   const { user, loading: authLoading, error: authError } = useFirebaseAuth();
   const { updateWhiteboardTitle } = useFirebaseWhiteboard();
   
+  // Debug user state
+  React.useEffect(() => {
+    console.log('🎯 App: User state changed', { 
+      user: user?.uid, 
+      userEmail: user?.email,
+      authLoading, 
+      authError 
+    });
+  }, [user, authLoading, authError]);
+  
   const [currentWhiteboardId, setCurrentWhiteboardId] = useState<string | null>(null);
   const [currentWhiteboardTitle, setCurrentWhiteboardTitle] = useState<string>('New whiteboard');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
@@ -94,6 +105,7 @@ function App() {
   // const [showGradientPicker, setShowGradientPicker] = useState(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]); // multi-select
   const [selectedShapes, setSelectedShapes] = useState<string[]>([]); // multi-select shapes
+  const [selectedImages, setSelectedImages] = useState<string[]>([]); // multi-select images
   const [lastMousePos, setLastMousePos] = useState<{x: number, y: number}>({x: 200, y: 200});
   const [marquee, setMarquee] = useState<null | {startX: number, startY: number, endX: number, endY: number}>(null);
   const [activeTool, setActiveTool] = useState<'text' | 'rectangle' | 'circle' | 'diamond' | 'pen'>('text');
@@ -235,6 +247,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
 
   // Refactored: useImageHandlers for image events
   const {
+    handleImageClick,
     handleImageMouseDown,
     handleImageResizeStart,
     handleImageDelete
@@ -245,6 +258,10 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     setDragImageStart,
     setResizingImage,
     setResizeStart,
+    selectedImages,
+    setSelectedImages,
+    setSelectedBoxes,
+    setSelectedShapes,
     whiteboardRef,
     pan,
     zoom
@@ -260,6 +277,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     if (!e.ctrlKey && !e.metaKey) {
       setSelectedBoxes([]);
       setSelectedShapes([]);
+      setSelectedImages([]);
       setSelectedMindMapNodes([]);
       setActiveMindMapNode(null);
     }
@@ -306,6 +324,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     // Clear other selections
     setSelectedBoxes([]);
     setSelectedShapes([]);
+    setSelectedImages([]);
   };
 
   const handleMindMapNodeTextChange = (id: string, text: string) => {
@@ -662,6 +681,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     // Clear selections
     setSelectedBoxes([]);
     setSelectedShapes([]);
+    setSelectedImages([]);
     setSelectedMindMapNodes([]);
     setActiveMindMapNode(null);
   };
@@ -681,6 +701,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     // Clear selections
     setSelectedBoxes([]);
     setSelectedShapes([]);
+    setSelectedImages([]);
     setSelectedMindMapNodes([]);
     setActiveMindMapNode(null);
   };
@@ -1019,12 +1040,13 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             src={img.src}
             width={img.width}
             height={img.height}
+            selected={selectedImages.includes(img.id)}
+            onClick={(e, id) => handleImageClick(e, id)}
             onMouseDown={(e, id) => {
               if (isPanning || resizingBox || resizingShape || resizingImage || draggingBox || draggingShape) return;
               handleImageMouseDown(e, id);
             }}
             onResizeStart={handleImageResizeStart}
-            onDelete={handleImageDelete}
           />
         ))}
         {/* Render shapes first so they are always behind text */}
@@ -1053,8 +1075,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             onTextChange={handleShapeTextChange}
             onTextBlur={handleShapeTextBlur}
             onTextDoubleClick={handleShapeTextDoubleClick}
-            onDelete={handleShapeDelete}
-            onChangeGradient={handleShapeChangeGradient}
             onResizeStart={handleShapeResizeStart}
           />
         ))}
@@ -1103,13 +1123,59 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
               });
             }}
             onResizeStart={handleResizeStart}
-            onDelete={deleteTextBox}
-            onChangeGradient={(id) => {
-              const randomGradient = getRandomGradient();
-              changeGradient(id, randomGradient.value);
-            }}
           />
         ))}
+
+        {/* Floating Toolbar for selected elements */}
+        {selectedShapes.length === 1 && (() => {
+          const shape = shapes.find(s => s.id === selectedShapes[0]);
+          if (!shape) return null;
+          return (
+            <FloatingToolbar
+              key={`shape-toolbar-${shape.id}`}
+              x={shape.x}
+              y={shape.y}
+              width={shape.width}
+              elementType="shape"
+              onChangeGradient={() => handleShapeChangeGradient(shape.id)}
+              onDelete={() => handleShapeDelete(shape.id)}
+            />
+          );
+        })()}
+
+        {selectedBoxes.length === 1 && (() => {
+          const textBox = textBoxes.find(t => t.id === selectedBoxes[0]);
+          if (!textBox || textBox.isEditing) return null;
+          return (
+            <FloatingToolbar
+              key={`textbox-toolbar-${textBox.id}`}
+              x={textBox.x}
+              y={textBox.y}
+              width={textBox.width}
+              elementType="textbox"
+              onChangeGradient={() => {
+                const randomGradient = getRandomGradient();
+                changeGradient(textBox.id, randomGradient.value);
+              }}
+              onDelete={() => deleteTextBox(textBox.id)}
+            />
+          );
+        })()}
+
+        {selectedImages.length === 1 && (() => {
+          const image = images.find(i => i.id === selectedImages[0]);
+          if (!image) return null;
+          return (
+            <FloatingToolbar
+              key={`image-toolbar-${image.id}`}
+              x={image.x}
+              y={image.y}
+              width={image.width}
+              elementType="image"
+              onDelete={() => handleImageDelete(image.id)}
+            />
+          );
+        })()}
 
         {/* Empty State */}
         {textBoxes.length === 0 && shapes.length === 0 && images.length === 0 && drawingPaths.length === 0 && mindMapNodes.length === 0 && (

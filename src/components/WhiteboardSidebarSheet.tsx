@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFirebaseAuth } from '../hooks/useAuth';
 import { Plus, FileText, Users, Trash2, Clock, Menu } from 'lucide-react';
 import { useFirebaseWhiteboard, WhiteboardData } from '../hooks/useFirebaseWhiteboard';
@@ -38,35 +38,67 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
 
+  const handleNewWhiteboard = () => {
+    onNewWhiteboard();
+    setOpen(false); // Close the sheet
+  };
+
+  // Keyboard shortcut: N for new whiteboard (when sidebar is open)
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (open && (e.key === 'n' || e.key === 'N') && !e.repeat) {
+      e.preventDefault();
+      handleNewWhiteboard();
+    }
+  }, [open, handleNewWhiteboard]);
+
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, handleKeyDown]);
+
   // Load whiteboards when sidebar opens and user is available
   useEffect(() => {
+    console.log('📱 Sidebar open effect triggered:', { open, user: user?.uid });
     if (open && user) {
+      console.log('🚀 Sidebar opened with user, loading whiteboards');
       loadWhiteboards();
     }
   }, [open, user]);
 
   useEffect(() => {
+    console.log('👤 User effect triggered:', { user: user?.uid, userExists: !!user });
     if (user) {
+      console.log('🚀 User authenticated, loading whiteboards');
       loadWhiteboards();
     } else {
+      console.log('🧹 No user, clearing whiteboards');
       setWhiteboards([]);
     }
   }, [user]);
 
   // Refresh whiteboards when refreshTrigger changes
   useEffect(() => {
+    console.log('🔄 Refresh trigger effect:', { 
+      user: user?.uid, 
+      userExists: !!user, 
+      refreshTrigger 
+    });
     if (user && refreshTrigger && refreshTrigger > 0) {
+      console.log('🚀 Refresh trigger activated, loading whiteboards');
       loadWhiteboards();
     }
   }, [user, refreshTrigger]);
 
   const loadWhiteboards = async () => {
+    console.log('🔄 Loading whiteboards...', { user: user?.uid, userExists: !!user });
     setLoading(true);
     try {
-      const userWhiteboards = await getAllWhiteboards();
+      const userWhiteboards = await getAllWhiteboards(user); // Pass user explicitly
+      console.log('✅ Loaded whiteboards:', userWhiteboards.length, userWhiteboards);
       setWhiteboards(userWhiteboards);
     } catch (error) {
-      console.error('Error loading whiteboards:', error);
+      console.error('❌ Error loading whiteboards:', error);
     } finally {
       setLoading(false);
     }
@@ -80,11 +112,6 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
         loadWhiteboards(); // Refresh the list
       }
     }
-  };
-
-  const handleNewWhiteboard = () => {
-    onNewWhiteboard();
-    setOpen(false); // Close the sheet
   };
 
   const handleLoadWhiteboard = (data: WhiteboardData) => {
@@ -131,10 +158,22 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
             {/* New Whiteboard Button */}
             <button
               onClick={handleNewWhiteboard}
-              className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mb-6 shadow-sm"
+              className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mb-4 shadow-sm"
+              title="Create a new whiteboard (Press N when sidebar is open)"
             >
               <Plus className="w-5 h-5 mr-2" />
               New Whiteboard
+            </button>
+
+            {/* Debug: Manual Refresh Button */}
+            <button
+              onClick={() => {
+                console.log('🔄 Manual refresh clicked');
+                loadWhiteboards();
+              }}
+              className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mb-6 shadow-sm text-sm"
+            >
+              🔄 Debug: Refresh Whiteboards
             </button>
 
             {/* My Whiteboards Section */}

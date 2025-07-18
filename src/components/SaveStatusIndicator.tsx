@@ -17,36 +17,28 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ status, isSig
     switch (status) {
       case 'saving':
         return {
-          icon: <Loader2 size={14} className="animate-spin" />,
-          text: 'Saving...',
-          textColor: 'text-blue-600',
-          bgColor: 'bg-blue-50',
-          borderColor: 'border-blue-200'
+          icon: <Loader2 size={16} className="animate-spin" />,
+          color: 'text-blue-600',
+          title: 'Saving...'
         };
       case 'saved':
         return {
-          icon: <CheckCircle size={14} />,
-          text: 'Saved',
-          textColor: 'text-green-600',
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200'
+          icon: <CheckCircle size={16} className="animate-pulse" />,
+          color: 'text-green-600',
+          title: 'Saved'
         };
       case 'error':
         return {
-          icon: <AlertCircle size={14} />,
-          text: 'Save failed',
-          textColor: 'text-red-600',
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200'
+          icon: <AlertCircle size={16} className="animate-bounce" />,
+          color: 'text-red-600',
+          title: 'Save failed'
         };
       case 'idle':
       default:
         return {
-          icon: <Clock size={14} />,
-          text: 'Auto-save enabled',
-          textColor: 'text-gray-500',
-          bgColor: 'bg-gray-50',
-          borderColor: 'border-gray-200'
+          icon: <Clock size={16} />,
+          color: 'text-gray-400',
+          title: 'Auto-save enabled'
         };
     }
   };
@@ -54,13 +46,11 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ status, isSig
   const config = getStatusConfig();
 
   return (
-    <div className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md border ${config.bgColor} ${config.borderColor} transition-all duration-200`}>
-      <div className={config.textColor}>
-        {config.icon}
-      </div>
-      <span className={`text-xs font-medium ${config.textColor}`}>
-        {config.text}
-      </span>
+    <div 
+      className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${config.color} hover:bg-gray-50`}
+      title={config.title}
+    >
+      {config.icon}
     </div>
   );
 };

@@ -8,6 +8,10 @@ interface UseImageHandlersProps {
   setDragImageStart: Dispatch<SetStateAction<{ x: number; y: number; offsetX: number; offsetY: number } | null>>;
   setResizingImage: Dispatch<SetStateAction<string | null>>;
   setResizeStart: Dispatch<SetStateAction<{ x: number; y: number; width: number; height: number; fontSize: number }>>;
+  selectedImages: string[];
+  setSelectedImages: Dispatch<SetStateAction<string[]>>;
+  setSelectedBoxes: Dispatch<SetStateAction<string[]>>;
+  setSelectedShapes: Dispatch<SetStateAction<string[]>>;
   whiteboardRef: React.RefObject<HTMLDivElement>;
   pan: { x: number; y: number };
   zoom: number;
@@ -20,10 +24,32 @@ export function useImageHandlers({
   setDragImageStart,
   setResizingImage,
   setResizeStart,
+  setSelectedImages,
+  setSelectedBoxes,
+  setSelectedShapes,
   whiteboardRef,
   pan,
   zoom
 }: UseImageHandlersProps) {
+  // Handle image selection
+  const handleImageClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    
+    if (e.ctrlKey || e.metaKey) {
+      // Multi-select mode
+      setSelectedImages(prev => 
+        prev.includes(id) ? prev.filter(imageId => imageId !== id) : [...prev, id]
+      );
+    } else {
+      // Single select
+      setSelectedImages([id]);
+    }
+    
+    // Clear other selections
+    setSelectedBoxes([]);
+    setSelectedShapes([]);
+  };
+
   // Drag image
   const handleImageMouseDown = (e: React.MouseEvent, id: string) => {
     if (e.button !== 0) return;
@@ -66,6 +92,7 @@ export function useImageHandlers({
   };
 
   return {
+    handleImageClick,
     handleImageMouseDown,
     handleImageResizeStart,
     handleImageDelete

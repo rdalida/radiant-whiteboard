@@ -182,12 +182,24 @@ export const useFirebaseWhiteboard = () => {
     }
   }, []);
 
-  // Get all whiteboards for the authenticated user
-  const getAllWhiteboards = async (): Promise<WhiteboardData[]> => {
+  // Get all whiteboards for a specific authenticated user
+  const getAllWhiteboards = async (authenticatedUser?: any): Promise<WhiteboardData[]> => {
+    const userToUse = authenticatedUser || user;
+    const isUserAuthenticated = !!(authenticatedUser || (user && isAuthenticated));
+    
+    console.log('🔍 getAllWhiteboards called', { 
+      user: user?.uid, 
+      authenticatedUser: authenticatedUser?.uid,
+      userToUse: userToUse?.uid,
+      isAuthenticated,
+      isUserAuthenticated,
+      userEmail: userToUse?.email 
+    });
     setLoading(true);
     setError(null);
     
-    if (!user || !isAuthenticated) {
+    if (!userToUse || !isUserAuthenticated) {
+      console.log('❌ User not authenticated, returning empty array');
       setError('User must be authenticated to load whiteboards');
       setLoading(false);
       return [];
@@ -197,20 +209,24 @@ export const useFirebaseWhiteboard = () => {
       // Query only whiteboards belonging to the authenticated user
       const q = query(
         collection(db, 'whiteboards'), 
-        where('userId', '==', user.uid)
+        where('userId', '==', userToUse.uid)
       );
       
+      console.log('🔍 Executing Firestore query for user:', userToUse.uid);
       const querySnapshot = await getDocs(q);
       const whiteboards: WhiteboardData[] = [];
       
+      console.log('📊 Query snapshot size:', querySnapshot.size);
       querySnapshot.forEach((doc) => {
         const data = doc.data() as WhiteboardData;
+        console.log('📄 Found whiteboard:', doc.id, data.title, data.userId);
         whiteboards.push({ ...data, id: doc.id });
       });
       
       // Sort by updatedAt descending
       whiteboards.sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds);
       
+      console.log('✅ Returning whiteboards:', whiteboards.length);
       setLoading(false);
       return whiteboards;
     } catch (err) {
