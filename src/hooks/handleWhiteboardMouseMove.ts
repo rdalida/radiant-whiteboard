@@ -1,4 +1,5 @@
 import { MouseEvent } from 'react';
+import { calculateFontSizeToFit } from '../utils/fontUtils';
 
 interface HandleWhiteboardMouseMoveParams {
   e: MouseEvent;
@@ -145,16 +146,18 @@ export function handleWhiteboardMouseMove({
     const deltaY = e.clientY - resizeStart.y;
     const newWidth = Math.max(100, resizeStart.width + deltaX);
     const newHeight = Math.max(30, resizeStart.height + deltaY);
-    const scaleFactor = Math.max(newWidth / resizeStart.width, newHeight / resizeStart.height);
-    const newFontSize = resizeStart.fontSize * scaleFactor;
-    setTextBoxesResize((textBoxes: any[]) => textBoxes.map((box: any) =>
-      box.id === resizingBox ? {
-        ...box,
-        width: newWidth,
-        height: newHeight,
-        fontSize: newFontSize
-      } : box
-    ));
+    setTextBoxesResize((textBoxes: any[]) =>
+      textBoxes.map((box: any) =>
+        box.id === resizingBox
+          ? {
+              ...box,
+              width: newWidth,
+              height: newHeight,
+              fontSize: calculateFontSizeToFit(box.text, newWidth),
+            }
+          : box
+      )
+    );
     return;
   }
   if (resizingShape) {
