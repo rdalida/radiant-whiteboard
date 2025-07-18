@@ -7,10 +7,12 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  Timestamp 
+  Timestamp,
+  query,
+  where 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { useUser } from '@clerk/clerk-react';
+import { useFirebaseAuth } from './useAuth';
 
 // Define the whiteboard data structure
 export interface WhiteboardData {
@@ -30,7 +32,7 @@ export interface WhiteboardData {
 export const useFirebaseWhiteboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useUser();
+  const { user, isAuthenticated } = useFirebaseAuth();
 
   // Save a whiteboard
   const saveWhiteboard = useCallback(async (
@@ -46,13 +48,19 @@ export const useFirebaseWhiteboard = () => {
     setLoading(true);
     setError(null);
     
+    if (!user || !isAuthenticated) {
+      setError('User must be authenticated to save whiteboard');
+      setLoading(false);
+      return null;
+    }
+    
     try {
       const now = Timestamp.now();
       const docRef = await addDoc(collection(db, 'whiteboards'), {
         title,
         ...whiteboardData,
-        userId: user?.id || 'anonymous',
-        userName: user?.fullName || user?.emailAddresses?.[0]?.emailAddress || 'Anonymous',
+        userId: user.uid, // Use Firebase Auth UID
+        userName: user.displayName || user.email || 'Anonymous',
         createdAt: now,
         updatedAt: now
       });
@@ -72,7 +80,7 @@ export const useFirebaseWhiteboard = () => {
       setLoading(false);
       return null;
     }
-  }, [user]);
+  }, [user, isAuthenticated]);
 
   // Update an existing whiteboard
   const updateWhiteboard = useCallback(async (
@@ -174,13 +182,25 @@ export const useFirebaseWhiteboard = () => {
     }
   }, []);
 
-  // Get all whiteboards (optionally filtered by user)
-  const getAllWhiteboards = async (userId?: string): Promise<WhiteboardData[]> => {
+  // Get all whiteboards for the authenticated user
+  const getAllWhiteboards = async (): Promise<WhiteboardData[]> => {
     setLoading(true);
     setError(null);
     
+    if (!user || !isAuthenticated) {
+      setError('User must be authenticated to load whiteboards');
+      setLoading(false);
+      return [];
+    }
+    
     try {
-      const querySnapshot = await getDocs(collection(db, 'whiteboards'));
+      // Query only whiteboards belonging to the authenticated user
+      const q = query(
+        collection(db, 'whiteboards'), 
+        where('userId', '==', user.uid)
+      );
+      
+      const querySnapshot = await getDocs(q);
       const whiteboards: WhiteboardData[] = [];
       
       querySnapshot.forEach((doc) => {
@@ -188,17 +208,11 @@ export const useFirebaseWhiteboard = () => {
         whiteboards.push({ ...data, id: doc.id });
       });
       
-      // Filter by user if specified
-      let filteredWhiteboards = whiteboards;
-      if (userId) {
-        filteredWhiteboards = whiteboards.filter(wb => wb.userId === userId);
-      }
-      
       // Sort by updatedAt descending
-      filteredWhiteboards.sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds);
+      whiteboards.sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds);
       
       setLoading(false);
-      return filteredWhiteboards;
+      return whiteboards;
     } catch (err) {
       console.error('Error getting whiteboards:', err);
       setError('Failed to load whiteboards');

@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import ClerkAuthButtons from './ClerkAuthButtons';
-import UserInfo from './UserInfo';
-import { useUser } from '@clerk/clerk-react';
-import { Edit2, Check, X } from 'lucide-react';
+import { useFirebaseAuth } from './hooks/useAuth';
+import { Edit2, Check, X, User, LogOut } from 'lucide-react';
+import AuthModal from './components/AuthModal';
 
 interface HeaderProps {
   currentWhiteboardTitle: string;
@@ -11,9 +10,10 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }) => {
-  const { isSignedIn } = useUser();
+  const { user, logout } = useFirebaseAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(currentWhiteboardTitle);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleStartEdit = () => {
     setEditTitle(currentWhiteboardTitle);
@@ -37,6 +37,14 @@ const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }
       handleSaveEdit();
     } else if (e.key === 'Escape') {
       handleCancelEdit();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
@@ -99,10 +107,46 @@ const Header: React.FC<HeaderProps> = ({ currentWhiteboardTitle, onTitleChange }
         </div>
         
         <div className="flex items-center justify-end min-w-[120px] space-x-3 pr-4">
-          {isSignedIn && <UserInfo />}
-          <ClerkAuthButtons />
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || 'User'}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                    <User size={16} className="text-white" />
+                  </div>
+                )}
+                <span className="text-sm font-medium text-gray-700">
+                  {user.displayName || user.email}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm px-3 py-1 rounded-md hover:bg-gray-100"
+              >
+                <LogOut size={16} />
+                <span>Sign out</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
+            >
+              Sign in
+            </button>
+          )}
         </div>
       </div>
+      
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
     </div>
   );
 };

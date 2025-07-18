@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useFirebaseAuth } from '../hooks/useAuth';
 import { Plus, FileText, Users, Trash2, Clock, Menu } from 'lucide-react';
 import { useFirebaseWhiteboard, WhiteboardData } from '../hooks/useFirebaseWhiteboard';
 import {
@@ -28,7 +28,7 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   open: externalOpen,
   onOpenChange: externalOnOpenChange
 }) => {
-  const { user } = useUser();
+  const { user } = useFirebaseAuth();
   const [whiteboards, setWhiteboards] = useState<WhiteboardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -54,7 +54,7 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   const loadWhiteboards = async () => {
     setLoading(true);
     try {
-      const userWhiteboards = await getAllWhiteboards(user?.id);
+      const userWhiteboards = await getAllWhiteboards();
       setWhiteboards(userWhiteboards);
     } catch (error) {
       console.error('Error loading whiteboards:', error);

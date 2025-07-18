@@ -13,6 +13,7 @@ import ShapeElement from './ShapeElement';
 import MindMapNode, { MindMapNodeData } from './MindMapNode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutoSave } from './hooks/useAutoSave';
+import { useFirebaseAuth } from './hooks/useAuth';
 export interface WhiteboardImage {
   id: string;
   x: number;
@@ -60,11 +61,9 @@ interface Shape {
 import { gradients } from './gradients';
 import { WhiteboardData, useFirebaseWhiteboard } from './hooks/useFirebaseWhiteboard';
 import WhiteboardSidebarSheet from './components/WhiteboardSidebarSheet';
-import { useUser } from '@clerk/clerk-react';
-import './utils/firebaseTest'; // Import the test utility
 
 function App() {
-  const { user } = useUser();
+  const { user, loading: authLoading, error: authError } = useFirebaseAuth();
   const { updateWhiteboardTitle } = useFirebaseWhiteboard();
   
   const [currentWhiteboardId, setCurrentWhiteboardId] = useState<string | null>(null);
@@ -702,6 +701,21 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Show auth error if present */}
+      {authError && (
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          <strong className="font-bold">Authentication Error: </strong>
+          <span className="block sm:inline">{authError}</span>
+        </div>
+      )}
+      
+      {/* Show loading state while authenticating */}
+      {authLoading && user && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded z-50">
+          <span className="block sm:inline">Authenticating...</span>
+        </div>
+      )}
+      
       {/* Grid Pattern */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div 
