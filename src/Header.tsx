@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = () => {
             <span className="text-white text-3xl font-bold select-none">R</span>
           </div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">
-            Radiant Notes
+            Radiant Whiteboard
           </h1>
         </div>
         <div className="flex items-center justify-end min-w-[120px] space-x-3">
