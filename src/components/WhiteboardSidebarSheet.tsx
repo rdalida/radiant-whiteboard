@@ -165,17 +165,6 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
               New Whiteboard
             </button>
 
-            {/* Debug: Manual Refresh Button */}
-            <button
-              onClick={() => {
-                console.log('🔄 Manual refresh clicked');
-                loadWhiteboards();
-              }}
-              className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mb-6 shadow-sm text-sm"
-            >
-              🔄 Debug: Refresh Whiteboards
-            </button>
-
             {/* My Whiteboards Section */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
