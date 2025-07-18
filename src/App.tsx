@@ -56,7 +56,6 @@ interface Shape {
 }
 
 import { gradients } from './gradients';
-import { handleExport, handleImport } from './hooks/useWhiteboardIO';
 import { WhiteboardData } from './hooks/useFirebaseWhiteboard';
 import WhiteboardSidebar from './components/WhiteboardSidebar';
 import { useUser } from '@clerk/clerk-react';
@@ -598,15 +597,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     ));
   };
 
-  // Export and import handlers from useWhiteboardIO
-  const onExport = () => handleExport({ textBoxes, shapes, images, drawingPaths });
-  const onImport = (e: React.ChangeEvent<HTMLInputElement>) => handleImport(e, {
-    setTextBoxes,
-    setShapes,
-    setImages,
-    setDrawingPaths
-  });
-
   // Firebase whiteboard handlers
   const handleLoadWhiteboard = (data: WhiteboardData) => {
     setTextBoxes(data.textBoxes || []);
@@ -674,8 +664,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
       <Header
         activeTool={activeTool}
         setActiveTool={setActiveTool}
-        handleExport={onExport}
-        handleImport={onImport}
       />
 
       {/* Whiteboard (zoomed/panned area) */}

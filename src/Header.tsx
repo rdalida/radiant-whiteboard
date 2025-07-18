@@ -8,15 +8,11 @@ import { useUser } from '@clerk/clerk-react';
 interface HeaderProps {
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
   setActiveTool: React.Dispatch<React.SetStateAction<'text' | 'rectangle' | 'circle' | 'diamond' | 'pen'>>;
-  handleExport: () => void;
-  handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   activeTool, 
-  setActiveTool, 
-  handleExport, 
-  handleImport
+  setActiveTool
 }) => {
   const { isSignedIn } = useUser();
 
@@ -35,8 +31,6 @@ const Header: React.FC<HeaderProps> = ({
           <Toolbar
             activeTool={activeTool}
             setActiveTool={setActiveTool}
-            handleExport={handleExport}
-            handleImport={handleImport}
           />
         </div>
         <div className="flex items-center justify-end min-w-[120px] space-x-3">

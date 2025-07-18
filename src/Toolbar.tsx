@@ -4,15 +4,11 @@ import { Square, Circle, Diamond, Pen } from 'lucide-react';
 interface ToolbarProps {
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
   setActiveTool: (tool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen') => void;
-  handleExport: () => void;
-  handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
   activeTool,
   setActiveTool,
-  handleExport,
-  handleImport,
 }) => {
   return (
     <div className="flex items-center space-x-2">
@@ -67,24 +63,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <span className="text-sm">Pen</span>
         </button>
       </div>
-      {/* Export/Import buttons */}
-      <button
-        onClick={handleExport}
-        className="ml-2 flex items-center space-x-1 px-3 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm"
-        title="Export whiteboard as file"
-      >
-        <span>Export</span>
-      </button>
-      <label className="ml-1 flex items-center space-x-1 px-3 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm cursor-pointer" title="Import whiteboard from file">
-        <span>Import</span>
-        <input
-          type="file"
-          accept="application/json"
-          onChange={handleImport}
-          style={{ display: 'none' }}
-        />
-      </label>
-
     </div>
   );
 };
