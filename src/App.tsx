@@ -10,6 +10,7 @@ import WhiteboardCanvas from './WhiteboardCanvas';
 import TextBox from './TextBox';
 import ImageElement from './ImageElement';
 import ShapeElement from './ShapeElement';
+import MindMapNode, { MindMapNodeData } from './MindMapNode';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 export interface WhiteboardImage {
   id: string;
@@ -28,7 +29,6 @@ interface DrawingPath {
   createdAt: number; // timestamp in ms
 }
 import { Plus } from 'lucide-react';
-import Toolbar from './Toolbar';
 import Header from './Header';
 
 interface TextBox {
@@ -67,6 +67,15 @@ function App() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [draggingImage, setDraggingImage] = useState<string | null>(null);
   const [dragImageStart, setDragImageStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
+  
+  // Mind Map state
+  const [mindMapNodes, setMindMapNodes] = useState<MindMapNodeData[]>([]);
+  const [activeMindMapNode, setActiveMindMapNode] = useState<string | null>(null);
+  const [draggingMindMapNode, setDraggingMindMapNode] = useState<string | null>(null);
+  const [dragMindMapStart, setDragMindMapStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
+  const [resizingMindMapNode, setResizingMindMapNode] = useState<string | null>(null);
+  const [resizeMindMapStart, setResizeMindMapStart] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
+  
   // const [showGradientPicker, setShowGradientPicker] = useState(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]); // multi-select
   const [selectedShapes, setSelectedShapes] = useState<string[]>([]); // multi-select shapes
@@ -195,6 +204,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     if (!e.ctrlKey && !e.metaKey) {
       setSelectedBoxes([]);
       setSelectedShapes([]);
+      setActiveMindMapNode(null);
     }
   };
 
@@ -222,6 +232,303 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     handleChangeGradient: handleShapeChangeGradient
   } = useShapeHandlers(shapes, setShapes, setSelectedShapes, setSelectedBoxes, getRandomGradient);
 
+  // Mind Map handlers
+  const handleMindMapNodeSelect = (id: string) => {
+    setActiveMindMapNode(id);
+    // Clear other selections
+    setSelectedBoxes([]);
+    setSelectedShapes([]);
+  };
+
+  const handleMindMapNodeTextChange = (id: string, text: string) => {
+    setMindMapNodes(nodes => 
+      nodes.map(node => 
+        node.id === id ? { ...node, text } : node
+      )
+    );
+  };
+
+  const handleMindMapNodeResizeStart = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const node = mindMapNodes.find(n => n.id === id);
+    if (!node) return;
+    
+    setResizingMindMapNode(id);
+    setResizeMindMapStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: node.width,
+      height: node.height
+    });
+  };
+
+  const handleMindMapNodeDelete = (id: string) => {
+    setMindMapNodes(nodes => {
+      // Remove the node and update parent's children array
+      const nodeToDelete = nodes.find(n => n.id === id);
+      if (!nodeToDelete) return nodes;
+      
+      // Update parent's children array
+      const updatedNodes = nodes.map(node => {
+        if (node.id === nodeToDelete.parentId) {
+          return {
+            ...node,
+            children: node.children.filter(childId => childId !== id)
+          };
+        }
+        return node;
+      });
+      
+      // Remove the node and all its descendants
+      const removeDescendants = (nodeId: string, allNodes: MindMapNodeData[]): MindMapNodeData[] => {
+        const node = allNodes.find(n => n.id === nodeId);
+        if (!node) return allNodes;
+        
+        let result = allNodes.filter(n => n.id !== nodeId);
+        node.children.forEach(childId => {
+          result = removeDescendants(childId, result);
+        });
+        
+        return result;
+      };
+      
+      return removeDescendants(id, updatedNodes);
+    });
+    
+    if (activeMindMapNode === id) {
+      setActiveMindMapNode(null);
+    }
+  };
+
+  const handleMindMapNodeDragStart = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const rect = whiteboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const node = mindMapNodes.find(n => n.id === id);
+    if (!node) return;
+    
+    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+    
+    setDraggingMindMapNode(id);
+    setDragMindMapStart({
+      x: mouseX,
+      y: mouseY,
+      offsetX: mouseX - node.x,
+      offsetY: mouseY - node.y
+    });
+  };
+
+  const createMindMapNode = (text: string, parentId: string | null = null, x?: number, y?: number): MindMapNodeData => {
+    const newId = Date.now().toString() + Math.random().toString(36).slice(2);
+    
+    // Assign gradient based on parent relationship
+    let gradient: string;
+    if (parentId === null) {
+      // Root node - assign random gradient
+      gradient = getRandomGradient().value;
+    } else {
+      // Check if there are existing siblings with the same parent
+      const siblings = mindMapNodes.filter(n => n.parentId === parentId);
+      if (siblings.length > 0) {
+        // Use the same gradient as existing siblings
+        gradient = siblings[0].gradient;
+      } else {
+        // First child of this parent - assign new random gradient
+        gradient = getRandomGradient().value;
+      }
+    }
+    
+    return {
+      id: newId,
+      parentId,
+      text,
+      x: x ?? lastMousePos.x - 60,
+      y: y ?? lastMousePos.y - 30,
+      width: 120,
+      height: 60,
+      children: [],
+      gradient
+    };
+  };
+
+  const addMindMapNode = (text: string, parentId: string | null = null, x?: number, y?: number) => {
+    const newNode = createMindMapNode(text, parentId, x, y);
+    
+    setMindMapNodes(nodes => {
+      const updatedNodes = [...nodes, newNode];
+      
+      // If it has a parent, add this node to parent's children
+      if (parentId) {
+        return updatedNodes.map(node => 
+          node.id === parentId 
+            ? { ...node, children: [...node.children, newNode.id] }
+            : node
+        );
+      }
+      
+      return updatedNodes;
+    });
+    
+    setActiveMindMapNode(newNode.id);
+    return newNode.id;
+  };
+
+  const addSiblingNode = (currentNodeId: string) => {
+    const currentNode = mindMapNodes.find(n => n.id === currentNodeId);
+    if (!currentNode) return;
+    
+    const siblingX = currentNode.x + currentNode.width + 40;
+    const siblingY = currentNode.y;
+    
+    // If current node has no parent (root node), create another root node
+    // Otherwise, create a sibling with the same parent
+    addMindMapNode('Sibling', currentNode.parentId, siblingX, siblingY);
+  };
+
+  const addChildNode = (currentNodeId: string) => {
+    const currentNode = mindMapNodes.find(n => n.id === currentNodeId);
+    if (!currentNode) return;
+    
+    const childX = currentNode.x;
+    const childY = currentNode.y + currentNode.height + 60;
+    
+    addMindMapNode('Child', currentNode.id, childX, childY);
+  };
+
+  // Render connector lines between parent and child nodes
+  const renderMindMapConnectors = () => {
+    const connections = mindMapNodes.filter(node => node.parentId).map(node => {
+      const parent = mindMapNodes.find(n => n.id === node.parentId);
+      if (!parent) return null;
+      
+      // Calculate connection points
+      const parentCenterX = parent.x + parent.width / 2;
+      const parentCenterY = parent.y + parent.height / 2;
+      const childCenterX = node.x + node.width / 2;
+      const childCenterY = node.y + node.height / 2;
+      
+      return {
+        id: node.id,
+        x1: parentCenterX,
+        y1: parentCenterY,
+        x2: childCenterX,
+        y2: childCenterY,
+        childGradient: node.gradient, // Use child's gradient for the connector
+      };
+    }).filter((conn): conn is NonNullable<typeof conn> => conn !== null);
+    
+    if (connections.length === 0) return null;
+    
+    // Calculate bounds for the SVG
+    const allX = connections.flatMap(c => [c.x1, c.x2]);
+    const allY = connections.flatMap(c => [c.y1, c.y2]);
+    const minX = Math.min(...allX) - 20;
+    const minY = Math.min(...allY) - 20;
+    const maxX = Math.max(...allX) + 20;
+    const maxY = Math.max(...allY) + 20;
+    
+    // Create smooth curved path function
+    const createSmoothPath = (x1: number, y1: number, x2: number, y2: number) => {
+      const dx = x2 - x1;
+      
+      // Control points for smooth curve
+      const controlPoint1X = x1 + dx * 0.3;
+      const controlPoint1Y = y1;
+      const controlPoint2X = x2 - dx * 0.3;
+      const controlPoint2Y = y2;
+      
+      return `M ${x1} ${y1} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${x2} ${y2}`;
+    };
+    
+    // Helper function to extract gradient colors from Tailwind class
+    const getGradientColors = (gradientClass: string) => {
+      const gradientMap: { [key: string]: { from: string; via: string; to: string } } = {
+        'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500': {
+          from: '#ef4444', via: '#eab308', to: '#a855f7'
+        },
+        'bg-gradient-to-r from-orange-400 via-red-500 to-pink-500': {
+          from: '#fb923c', via: '#ef4444', to: '#ec4899'
+        },
+        'bg-gradient-to-r from-blue-400 via-cyan-500 to-teal-500': {
+          from: '#60a5fa', via: '#06b6d4', to: '#14b8a6'
+        },
+        'bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600': {
+          from: '#4ade80', via: '#10b981', to: '#0d9488'
+        },
+        'bg-gradient-to-r from-purple-400 via-violet-500 to-indigo-500': {
+          from: '#a78bfa', via: '#8b5cf6', to: '#6366f1'
+        },
+        'bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600': {
+          from: '#facc15', via: '#f97316', to: '#dc2626'
+        },
+        'bg-gradient-to-r from-emerald-300 via-cyan-400 to-blue-400': {
+          from: '#6ee7b7', via: '#22d3ee', to: '#60a5fa'
+        },
+        'bg-gradient-to-r from-pink-400 via-rose-500 to-red-500': {
+          from: '#f472b6', via: '#f43f5e', to: '#ef4444'
+        },
+        'bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500': {
+          from: '#6366f1', via: '#9333ea', to: '#ec4899'
+        },
+        'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500': {
+          from: '#fbbf24', via: '#eab308', to: '#f97316'
+        }
+      };
+      
+      return gradientMap[gradientClass] || { from: '#6b7280', via: '#4b5563', to: '#374151' };
+    };
+    
+    return (
+      <svg
+        className="absolute pointer-events-none"
+        style={{ 
+          left: minX,
+          top: minY,
+          width: maxX - minX,
+          height: maxY - minY,
+          zIndex: 1 
+        }}
+      >
+        {/* Define gradients dynamically */}
+        <defs>
+          {connections.map(conn => {
+            const colors = getGradientColors(conn.childGradient);
+            return (
+              <linearGradient key={`gradient-${conn.id}`} id={`gradient-${conn.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={colors.from} />
+                <stop offset="50%" stopColor={colors.via} />
+                <stop offset="100%" stopColor={colors.to} />
+              </linearGradient>
+            );
+          })}
+        </defs>
+        
+        {connections.map(conn => {
+          const smoothPath = createSmoothPath(
+            conn.x1 - minX,
+            conn.y1 - minY,
+            conn.x2 - minX,
+            conn.y2 - minY
+          );
+          
+          return (
+            <path
+              key={`connector-${conn.id}`}
+              d={smoothPath}
+              stroke={`url(#gradient-${conn.id})`}
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          );
+        })}
+      </svg>
+    );
+  };
+
   // Centralized keyboard shortcuts
   useKeyboardShortcuts({
     setActiveTool,
@@ -235,15 +542,14 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
     textBoxes,
     shapes,
     activeTool,
-    getRandomGradient
+    getRandomGradient,
+    activeMindMapNode,
+    addMindMapNode,
+    addSiblingNode,
+    addChildNode,
+    handleMindMapNodeDelete
   });
 
-  // ...existing code...
-
-  // ...existing code...
-
-  // Refactored: handleMouseUp is now imported from hooks
-  // Fade out and remove pen marks after a few seconds
   React.useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -296,8 +602,6 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         handleImport={onImport}
       />
 
-
-
       {/* Whiteboard (zoomed/panned area) */}
       <div
         ref={whiteboardRef}
@@ -316,97 +620,157 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
           setCurrentPath,
           getRandomGradient
         })}
-        onMouseMove={e => handleWhiteboardMouseMove({
-          e,
-          whiteboardRef,
-          pan,
-          zoom,
-          isPanning,
-          panStart,
-          setPan,
-          setPanStart,
-          isDrawing,
-          currentPath,
-          activeTool,
-          setCurrentPath,
-          draggingShape,
-          dragShapeStart,
-          setShapes,
-          draggingBox,
-          dragBoxStart,
-          setTextBoxes,
-          draggingImage,
-          dragImageStart,
-          setImages,
-          resizingBox,
-          resizeStart,
-          setTextBoxesResize: setTextBoxes,
-          resizingShape,
-          setShapesResize: setShapes,
-          resizingImage,
-          setImagesResize: setImages,
-          setLastMousePos,
-          marquee,
-          setMarquee
-        })}
-        onMouseUp={() => handleMouseUp({
-          isDrawing,
-          currentPath,
-          setDrawingPaths,
-          setCurrentPath,
-          setIsDrawing,
-          setResizingBox,
-          setResizingShape,
-          setResizingImage,
-          draggingShape,
-          setDraggingShape,
-          setDragShapeStart,
-          draggingBox,
-          setDraggingBox,
-          setDragBoxStart,
-          draggingImage,
-          setDraggingImage,
-          setDragImageStart,
-          isPanning,
-          setIsPanning,
-          setPanStart,
-          marquee,
-          whiteboardRef,
-          textBoxes,
-          shapes,
-          setSelectedBoxes,
-          setSelectedShapes,
-          setMarquee
-        })}
-        onMouseLeave={() => handleMouseUp({
-          isDrawing,
-          currentPath,
-          setDrawingPaths,
-          setCurrentPath,
-          setIsDrawing,
-          setResizingBox,
-          setResizingShape,
-          setResizingImage,
-          draggingShape,
-          setDraggingShape,
-          setDragShapeStart,
-          draggingBox,
-          setDraggingBox,
-          setDragBoxStart,
-          draggingImage,
-          setDraggingImage,
-          setDragImageStart,
-          isPanning,
-          setIsPanning,
-          setPanStart,
-          marquee,
-          whiteboardRef,
-          textBoxes,
-          shapes,
-          setSelectedBoxes,
-          setSelectedShapes,
-          setMarquee
-        })}
+        onMouseMove={e => {
+          handleWhiteboardMouseMove({
+            e,
+            whiteboardRef,
+            pan,
+            zoom,
+            isPanning,
+            panStart,
+            setPan,
+            setPanStart,
+            isDrawing,
+            currentPath,
+            activeTool,
+            setCurrentPath,
+            draggingShape,
+            dragShapeStart,
+            setShapes,
+            draggingBox,
+            dragBoxStart,
+            setTextBoxes,
+            draggingImage,
+            dragImageStart,
+            setImages,
+            resizingBox,
+            resizeStart,
+            setTextBoxesResize: setTextBoxes,
+            resizingShape,
+            setShapesResize: setShapes,
+            resizingImage,
+            setImagesResize: setImages,
+            setLastMousePos,
+            marquee,
+            setMarquee
+          });
+          
+          // Handle mind map node resizing
+          if (resizingMindMapNode && resizeMindMapStart) {
+            const deltaX = e.clientX - resizeMindMapStart.x;
+            const deltaY = e.clientY - resizeMindMapStart.y;
+            const newWidth = Math.max(60, resizeMindMapStart.width + deltaX);
+            const newHeight = Math.max(40, resizeMindMapStart.height + deltaY);
+            
+            setMindMapNodes(nodes => 
+              nodes.map(node => 
+                node.id === resizingMindMapNode 
+                  ? { ...node, width: newWidth, height: newHeight }
+                  : node
+              )
+            );
+          }
+          
+          // Handle mind map node dragging
+          if (draggingMindMapNode && dragMindMapStart) {
+            const rect = whiteboardRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            
+            const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+            const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+            
+            const newX = mouseX - dragMindMapStart.offsetX;
+            const newY = mouseY - dragMindMapStart.offsetY;
+            
+            setMindMapNodes(nodes => 
+              nodes.map(node => 
+                node.id === draggingMindMapNode 
+                  ? { ...node, x: newX, y: newY }
+                  : node
+              )
+            );
+          }
+        }}
+        onMouseUp={() => {
+          handleMouseUp({
+            isDrawing,
+            currentPath,
+            setDrawingPaths,
+            setCurrentPath,
+            setIsDrawing,
+            setResizingBox,
+            setResizingShape,
+            setResizingImage,
+            draggingShape,
+            setDraggingShape,
+            setDragShapeStart,
+            draggingBox,
+            setDraggingBox,
+            setDragBoxStart,
+            draggingImage,
+            setDraggingImage,
+            setDragImageStart,
+            isPanning,
+            setIsPanning,
+            setPanStart,
+            marquee,
+            whiteboardRef,
+            textBoxes,
+            shapes,
+            setSelectedBoxes,
+            setSelectedShapes,
+            setMarquee
+          });
+          
+          // Handle mind map node resize end
+          if (resizingMindMapNode) {
+            setResizingMindMapNode(null);
+            setResizeMindMapStart(null);
+          }
+          
+          // Handle mind map node drag end
+          if (draggingMindMapNode) {
+            setDraggingMindMapNode(null);
+            setDragMindMapStart(null);
+          }
+        }}
+        onMouseLeave={() => {
+          handleMouseUp({
+            isDrawing,
+            currentPath,
+            setDrawingPaths,
+            setCurrentPath,
+            setIsDrawing,
+            setResizingBox,
+            setResizingShape,
+            setResizingImage,
+            draggingShape,
+            setDraggingShape,
+            setDragShapeStart,
+            draggingBox,
+            setDraggingBox,
+            setDragBoxStart,
+            draggingImage,
+            setDraggingImage,
+            setDragImageStart,
+            isPanning,
+            setIsPanning,
+            setPanStart,
+            marquee,
+            whiteboardRef,
+            textBoxes,
+            shapes,
+            setSelectedBoxes,
+            setSelectedShapes,
+            setMarquee
+          });
+          
+          // Handle mind map node resize end
+          if (resizingMindMapNode) {
+            setResizingMindMapNode(null);
+            setResizeMindMapStart(null);
+          }
+        }}
         onWheel={e => handleWheel(e, whiteboardRef)}
         onContextMenu={e => e.preventDefault()}
         style={{ overflow: 'hidden' }}
@@ -448,6 +812,23 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
             }}
           />
         )}
+        
+        {/* Mind Map connectors */}
+        {renderMindMapConnectors()}
+        
+        {/* Mind Map nodes */}
+        {mindMapNodes.map(node => (
+          <MindMapNode
+            key={node.id}
+            node={node}
+            isActive={activeMindMapNode === node.id}
+            onSelect={handleMindMapNodeSelect}
+            onTextChange={handleMindMapNodeTextChange}
+            onResizeStart={handleMindMapNodeResizeStart}
+            onDelete={handleMindMapNodeDelete}
+            onDragStart={handleMindMapNodeDragStart}
+          />
+        ))}
         
         {/* Render drawing paths using WhiteboardCanvas */}
         <WhiteboardCanvas
@@ -559,7 +940,7 @@ const [dragBoxStart, setDragBoxStart] = useState<{ x: number, y: number, offsetX
         ))}
 
         {/* Empty State */}
-        {textBoxes.length === 0 && shapes.length === 0 && images.length === 0 && drawingPaths.length === 0 && (
+        {textBoxes.length === 0 && shapes.length === 0 && images.length === 0 && drawingPaths.length === 0 && mindMapNodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
               <div className="bg-gradient-to-r from-gray-400 to-gray-600 bg-clip-text text-transparent">

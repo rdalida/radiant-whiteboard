@@ -14,6 +14,12 @@ interface UseKeyboardShortcutsProps {
   shapes: any[];
   activeTool: 'text' | 'rectangle' | 'circle' | 'diamond' | 'pen';
   getRandomGradient: () => any;
+  // Mind Map props
+  activeMindMapNode: string | null;
+  addMindMapNode: (text: string, parentId?: string | null, x?: number, y?: number) => void;
+  addSiblingNode: (currentNodeId: string) => void;
+  addChildNode: (currentNodeId: string) => void;
+  handleMindMapNodeDelete: (id: string) => void;
 }
 
 export function useKeyboardShortcuts({
@@ -28,7 +34,12 @@ export function useKeyboardShortcuts({
   textBoxes,
   shapes,
   activeTool,
-  getRandomGradient
+  getRandomGradient,
+  activeMindMapNode,
+  addMindMapNode,
+  addSiblingNode,
+  addChildNode,
+  handleMindMapNodeDelete
 }: UseKeyboardShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,8 +94,29 @@ export function useKeyboardShortcuts({
         setSelectedBoxes([]);
         setSelectedShapes([]);
       }
+      
+      // Mind Map shortcuts
+      if ((e.key === 'm' || e.key === 'M') && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        addMindMapNode('Node');
+      }
+      
+      if (e.key === 'Tab' && activeMindMapNode && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        addSiblingNode(activeMindMapNode);
+      }
+      
+      if (e.key === 'Enter' && activeMindMapNode && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        addChildNode(activeMindMapNode);
+      }
+      
+      if ((e.key === 'Delete' || e.key === 'Backspace') && activeMindMapNode && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        handleMindMapNodeDelete(activeMindMapNode);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBoxes, selectedShapes, lastMousePos, textBoxes, shapes, activeTool]);
+  }, [selectedBoxes, selectedShapes, lastMousePos, textBoxes, shapes, activeTool, activeMindMapNode]);
 }
