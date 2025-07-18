@@ -83,6 +83,25 @@ export const useFirebaseWhiteboard = () => {
   }, [user, isAuthenticated]);
 
   // Update an existing whiteboard
+  // Helper to recursively remove undefined fields from objects/arrays
+  function removeUndefined(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map(removeUndefined);
+    } else if (obj && typeof obj === 'object') {
+      const newObj: any = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          const value = obj[key];
+          if (value !== undefined) {
+            newObj[key] = removeUndefined(value);
+          }
+        }
+      }
+      return newObj;
+    }
+    return obj;
+  }
+
   const updateWhiteboard = useCallback(async (
     id: string,
     whiteboardData: {
@@ -95,36 +114,30 @@ export const useFirebaseWhiteboard = () => {
   ): Promise<boolean> => {
     setLoading(true);
     setError(null);
-    
     try {
       const updateData = {
-        textBoxes: whiteboardData.textBoxes,
-        shapes: whiteboardData.shapes,
-        images: whiteboardData.images,
-        drawingPaths: whiteboardData.drawingPaths,
-        mindMapNodes: whiteboardData.mindMapNodes,
+        textBoxes: removeUndefined(whiteboardData.textBoxes),
+        shapes: removeUndefined(whiteboardData.shapes),
+        images: removeUndefined(whiteboardData.images),
+        drawingPaths: removeUndefined(whiteboardData.drawingPaths),
+        mindMapNodes: removeUndefined(whiteboardData.mindMapNodes),
         updatedAt: Timestamp.now()
       };
-      
       const docRef = doc(db, 'whiteboards', id);
       await updateDoc(docRef, updateData);
-      
       setLoading(false);
       return true;
     } catch (err) {
       console.error('Error updating whiteboard:', err);
-      
       // More detailed error logging
       if (err instanceof Error) {
         console.error('Error message:', err.message);
         console.error('Error stack:', err.stack);
       }
-      
       // Check if it's a Firebase error
       if (err && typeof err === 'object' && 'code' in err) {
         console.error('Firebase error code:', (err as any).code);
       }
-      
       setError('Failed to update whiteboard');
       setLoading(false);
       return false;
