@@ -6,6 +6,7 @@ interface TextBoxProps {
   y: number;
   width: number;
   height: number;
+  rotation: number;
   text: string;
   gradient: string;
   isEditing: boolean;
@@ -22,12 +23,13 @@ interface TextBoxProps {
   onTextDoubleClick: (id: string) => void;
   onMouseDown: (e: React.MouseEvent, id: string) => void;
   onResizeStart: (e: React.MouseEvent, id: string) => void;
+  onRotateStart: (e: React.MouseEvent, id: string) => void;
 }
 
 const TextBox: React.FC<TextBoxProps> = ({
-  id, x, y, width, height, text, gradient, isEditing, fontSize, selected,
+  id, x, y, width, height, rotation, text, gradient, isEditing, fontSize, selected,
   isBold, isItalic, isUnderline, color,
-  onTextChange, onTextBlur, onTextClick, onTextDoubleClick, onMouseDown, onResizeStart
+  onTextChange, onTextBlur, onTextClick, onTextDoubleClick, onMouseDown, onResizeStart, onRotateStart
 }) => {
   // Build dynamic style classes and styles
   const textClasses = [
@@ -53,7 +55,7 @@ const TextBox: React.FC<TextBoxProps> = ({
   return (
     <div
       className={`absolute${selected && !isEditing ? ' ring-2 ring-blue-400 z-20' : ''}`}
-      style={{ left: x, top: y, width, height }}
+      style={{ left: x, top: y, width, height, transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }}
     >
       {isEditing ? (
         <textarea
@@ -83,13 +85,20 @@ const TextBox: React.FC<TextBoxProps> = ({
           >
             {text}
           </div>
-          {/* Resize handle - only show when selected */}
+          {/* Resize & rotate handles - only show when selected */}
           {selected && (
-            <div
-              className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow-lg"
-              onMouseDown={e => onResizeStart(e, id)}
-              title="Drag to resize"
-            />
+            <>
+              <div
+                className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow-lg"
+                onMouseDown={e => onResizeStart(e, id)}
+                title="Drag to resize"
+              />
+              <div
+                className="absolute -top-4 left-1/2 w-3 h-3 bg-green-500 rounded-full cursor-grab border-2 border-white shadow-lg transform -translate-x-1/2"
+                onMouseDown={e => onRotateStart(e, id)}
+                title="Drag to rotate"
+              />
+            </>
           )}
         </div>
       )}

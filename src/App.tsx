@@ -49,6 +49,7 @@ interface TextBox {
   fontSize: number;
   width: number;
   height: number;
+  rotation: number;
   // Text formatting properties
   isBold?: boolean;
   isItalic?: boolean;
@@ -150,6 +151,8 @@ function App() {
   const [resizingImage, setResizingImage] = useState<string | null>(null);
   const [resizingArrow, setResizingArrow] = useState<{ id: string; handle: 'start' | 'end' } | null>(null);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, fontSize: 0 });
+  const [rotatingBox, setRotatingBox] = useState<string | null>(null);
+  const [rotateStart, setRotateStart] = useState<{ centerX: number; centerY: number; startAngle: number; initialRotation: number }>({ centerX: 0, centerY: 0, startAngle: 0, initialRotation: 0 });
 // Drag state for shapes - DEPRECATED (using universal dragging now)
 // const [draggingShape, setDraggingShape] = useState<string | null>(null);
 // const [dragShapeStart, setDragShapeStart] = useState<{ x: number, y: number, offsetX: number, offsetY: number } | null>(null);
@@ -255,6 +258,21 @@ function App() {
       height: box.height,
       fontSize: box.fontSize
     });
+  };
+
+  const handleRotateStart = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const rect = whiteboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const box = textBoxes.find(b => b.id === id);
+    if (!box) return;
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+    const startAngle = Math.atan2(mouseY - centerY, mouseX - centerX);
+    setRotatingBox(id);
+    setRotateStart({ centerX, centerY, startAngle, initialRotation: box.rotation });
   };
 
   // Restore resize for shape
@@ -781,7 +799,10 @@ function App() {
 
   // Firebase whiteboard handlers
   const handleLoadWhiteboard = (data: WhiteboardData) => {
-    setTextBoxes(data.textBoxes || []);
+    setTextBoxes((data.textBoxes || []).map(box => ({
+      rotation: 0,
+      ...box
+    })));
     setShapes(data.shapes || []);
     setImages(data.images || []);
     setDrawingPaths(data.drawingPaths || []);
@@ -952,6 +973,9 @@ function App() {
             resizingBox,
             resizeStart,
             setTextBoxesResize: setTextBoxes,
+            rotatingBox,
+            rotateStart,
+            setTextBoxesRotate: setTextBoxes,
             resizingShape,
             setShapesResize: setShapes,
             resizingImage,
@@ -1095,6 +1119,7 @@ function App() {
             setResizingBox,
             setResizingShape,
             setResizingImage,
+            setRotatingBox,
             // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
             // REMOVED: draggingBox, setDraggingBox, setDragBoxStart
             draggingImage,
@@ -1191,6 +1216,7 @@ function App() {
             setResizingBox,
             setResizingShape,
             setResizingImage,
+            setRotatingBox,
             // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
             // REMOVED: draggingBox, setDraggingBox, setDragBoxStart
             draggingImage,
@@ -1408,6 +1434,7 @@ function App() {
             y={box.y}
             width={box.width}
             height={box.height}
+            rotation={box.rotation}
             text={box.text}
             gradient={box.gradient}
             isEditing={box.isEditing}
@@ -1442,6 +1469,7 @@ function App() {
               startDrag(id, 'textbox', mouseX, mouseY, currentSelection, textBoxes);
             }}
             onResizeStart={handleResizeStart}
+            onRotateStart={handleRotateStart}
           />
         ))}
 

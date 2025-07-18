@@ -28,6 +28,9 @@ interface HandleWhiteboardMouseMoveParams {
   resizingBox: string | null;
   resizeStart: { x: number; y: number; width: number; height: number; fontSize: number };
   setTextBoxesResize: (fn: any) => void;
+  rotatingBox: string | null;
+  rotateStart: { centerX: number; centerY: number; startAngle: number; initialRotation: number };
+  setTextBoxesRotate: (fn: any) => void;
   resizingShape: string | null;
   setShapesResize: (fn: any) => void;
   resizingImage: string | null;
@@ -69,6 +72,9 @@ export function handleWhiteboardMouseMove({
   setShapesResize,
   resizingImage,
   setImagesResize,
+  rotatingBox,
+  rotateStart,
+  setTextBoxesRotate,
   setLastMousePos,
   marquee,
   setMarquee
@@ -137,6 +143,19 @@ export function handleWhiteboardMouseMove({
       img.id === draggingImage
         ? { ...img, x: mouseX - dragImageStart.offsetX, y: mouseY - dragImageStart.offsetY }
         : img
+    ));
+    return;
+  }
+  if (rotatingBox) {
+    const rect = whiteboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
+    const angle = Math.atan2(mouseY - rotateStart.centerY, mouseX - rotateStart.centerX);
+    const delta = angle - rotateStart.startAngle;
+    const newRotation = rotateStart.initialRotation + delta * (180 / Math.PI);
+    setTextBoxesRotate((textBoxes: any[]) => textBoxes.map((box: any) =>
+      box.id === rotatingBox ? { ...box, rotation: newRotation } : box
     ));
     return;
   }

@@ -94,10 +94,11 @@ export function useKeyboardShortcuts({
               text: 'Text',
               gradient: randomGradient.value,
               isEditing: false,
-              fontSize,
-              width: dims.width,
-              height: dims.height,
-              // Default formatting properties
+            fontSize,
+            width: dims.width,
+            height: dims.height,
+            rotation: 0,
+            // Default formatting properties
               isBold: false,
               isItalic: false,
               isUnderline: false,

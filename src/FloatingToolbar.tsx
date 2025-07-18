@@ -274,8 +274,8 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         </button>
       )}
 
-      {/* Rotate - for shapes and images */}
-      {(elementType === 'shape' || elementType === 'image') && onRotate && (
+      {/* Rotate - for shapes, images and text boxes */}
+      {(elementType === 'shape' || elementType === 'image' || elementType === 'textbox') && onRotate && (
         <button
           onClick={(e) => {
             e.stopPropagation();

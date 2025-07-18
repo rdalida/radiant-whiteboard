@@ -14,6 +14,7 @@ interface HandleMouseUpParams {
   setResizingBox: (val: string | null) => void;
   setResizingShape: (val: string | null) => void;
   setResizingImage: (val: string | null) => void;
+  setRotatingBox: (val: string | null) => void;
   // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
   // REMOVED: draggingBox, setDraggingBox, setDragBoxStart  
   draggingImage: string | null;
@@ -54,6 +55,7 @@ export function handleMouseUp({
   setResizingBox,
   setResizingShape,
   setResizingImage,
+  setRotatingBox,
   // REMOVED: draggingShape, setDraggingShape, setDragShapeStart
   // REMOVED: draggingBox, setDraggingBox, setDragBoxStart
   draggingImage,
@@ -91,6 +93,7 @@ export function handleMouseUp({
   setResizingBox(null);
   setResizingShape(null);
   setResizingImage(null);
+  setRotatingBox(null);
   // REMOVED: Shape and text box drag cleanup - now handled by universal dragging system
   if (endDragCallback) {
     endDragCallback();
