@@ -996,9 +996,9 @@ function App() {
             updateDrag(mouseX, mouseY, (deltaX, deltaY, originalPositions) => {
               switch (universalDragState.dragType) {
                 case 'textbox':
-                  setTextBoxes(textBoxes => 
+                  setTextBoxes(textBoxes =>
                     textBoxes.map(textBox => {
-                      if (selectedBoxes.includes(textBox.id) && originalPositions[textBox.id]) {
+                      if (originalPositions[textBox.id]) {
                         const originalPos = originalPositions[textBox.id];
                         return { ...textBox, x: originalPos.x + deltaX, y: originalPos.y + deltaY };
                       }
@@ -1007,9 +1007,9 @@ function App() {
                   );
                   break;
                 case 'shape':
-                  setShapes(shapes => 
+                  setShapes(shapes =>
                     shapes.map(shape => {
-                      if (selectedShapes.includes(shape.id) && originalPositions[shape.id]) {
+                      if (originalPositions[shape.id]) {
                         const originalPos = originalPositions[shape.id];
                         return { ...shape, x: originalPos.x + deltaX, y: originalPos.y + deltaY };
                       }
@@ -1018,9 +1018,9 @@ function App() {
                   );
                   break;
                 case 'image':
-                  setImages(images => 
+                  setImages(images =>
                     images.map(image => {
-                      if (selectedImages.includes(image.id) && originalPositions[image.id]) {
+                      if (originalPositions[image.id]) {
                         const originalPos = originalPositions[image.id];
                         return { ...image, x: originalPos.x + deltaX, y: originalPos.y + deltaY };
                       }
