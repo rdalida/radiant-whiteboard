@@ -35,7 +35,18 @@ export const useAutoSave = (
     if (!currentWhiteboardId || !user) return;
 
     const currentData = currentDataRef.current;
-    const currentDataString = JSON.stringify(currentData);
+    
+    // Ensure all required fields exist and are arrays
+    const validatedData = {
+      textBoxes: Array.isArray(currentData.textBoxes) ? currentData.textBoxes : [],
+      shapes: Array.isArray(currentData.shapes) ? currentData.shapes : [],
+      images: Array.isArray(currentData.images) ? currentData.images : [],
+      drawingPaths: Array.isArray(currentData.drawingPaths) ? currentData.drawingPaths : [],
+      arrows: Array.isArray(currentData.arrows) ? currentData.arrows : [],
+      mindMapNodes: Array.isArray(currentData.mindMapNodes) ? currentData.mindMapNodes : []
+    };
+    
+    const currentDataString = JSON.stringify(validatedData);
     
     // Only save if data has actually changed
     if (currentDataString === lastSavedDataRef.current) {
@@ -45,7 +56,7 @@ export const useAutoSave = (
     setSaveStatus('saving');
 
     try {
-      const success = await updateWhiteboard(currentWhiteboardId, currentData);
+      const success = await updateWhiteboard(currentWhiteboardId, validatedData);
       if (success) {
         lastSavedDataRef.current = currentDataString;
         console.log('💾 Auto-save successful for whiteboard:', currentWhiteboardId);
@@ -77,16 +88,26 @@ export const useAutoSave = (
     const currentData = currentDataRef.current;
     const currentTitle = currentTitleRef.current;
     
-    const hasContent = currentData.textBoxes.length > 0 || currentData.shapes.length > 0 ||
-                      currentData.images.length > 0 || currentData.drawingPaths.length > 0 ||
-                      currentData.arrows.length > 0 || currentData.mindMapNodes.length > 0;
+    // Ensure all required fields exist and are arrays
+    const validatedData = {
+      textBoxes: Array.isArray(currentData.textBoxes) ? currentData.textBoxes : [],
+      shapes: Array.isArray(currentData.shapes) ? currentData.shapes : [],
+      images: Array.isArray(currentData.images) ? currentData.images : [],
+      drawingPaths: Array.isArray(currentData.drawingPaths) ? currentData.drawingPaths : [],
+      arrows: Array.isArray(currentData.arrows) ? currentData.arrows : [],
+      mindMapNodes: Array.isArray(currentData.mindMapNodes) ? currentData.mindMapNodes : []
+    };
+    
+    const hasContent = validatedData.textBoxes.length > 0 || validatedData.shapes.length > 0 ||
+                      validatedData.images.length > 0 || validatedData.drawingPaths.length > 0 ||
+                      validatedData.arrows.length > 0 || validatedData.mindMapNodes.length > 0;
 
     if (!hasContent) return;
 
     setSaveStatus('saving');
 
     try {
-      const whiteboardId = await saveWhiteboard(currentTitle, currentData);
+      const whiteboardId = await saveWhiteboard(currentTitle || 'Untitled Whiteboard', validatedData);
       if (whiteboardId) {
         console.log('💾 New whiteboard saved successfully:', whiteboardId);
         setSaveStatus('saved');

@@ -10,6 +10,17 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface WhiteboardSidebarSheetProps {
   onNewWhiteboard: () => void;
@@ -32,6 +43,7 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
   const [whiteboards, setWhiteboards] = useState<WhiteboardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [internalOpen, setInternalOpen] = useState(false);
+  const [whiteboardToDelete, setWhiteboardToDelete] = useState<WhiteboardData | null>(null);
   const { getAllWhiteboards, deleteWhiteboard } = useFirebaseWhiteboard();
 
   // Use external open state if provided, otherwise use internal state
@@ -104,13 +116,13 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, whiteboardId: string) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this whiteboard?')) {
-      const success = await deleteWhiteboard(whiteboardId);
+  const confirmDelete = async () => {
+    if (whiteboardToDelete?.id) {
+      const success = await deleteWhiteboard(whiteboardToDelete.id);
       if (success) {
         loadWhiteboards(); // Refresh the list
       }
+      setWhiteboardToDelete(null);
     }
   };
 
@@ -207,13 +219,45 @@ const WhiteboardSidebarSheet: React.FC<WhiteboardSidebarSheetProps> = ({
                             {formatTime(whiteboard.updatedAt)}
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => handleDelete(e, whiteboard.id!)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-700 transition-all"
-                          title="Delete whiteboard"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <AlertDialog onOpenChange={(open) => {
+                          if (!open) {
+                            setWhiteboardToDelete(null);
+                          }
+                        }}>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const currentWhiteboard = whiteboards.find(w => w.id === whiteboard.id);
+                                if (currentWhiteboard) {
+                                  setWhiteboardToDelete(currentWhiteboard);
+                                }
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-700 transition-all"
+                              title="Delete whiteboard"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Whiteboard</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{whiteboardToDelete?.title || 'this whiteboard'}"? 
+                                This action cannot be undone and will permanently remove the whiteboard and all its content.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => confirmDelete()}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ))}

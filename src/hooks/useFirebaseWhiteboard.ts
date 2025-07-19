@@ -35,6 +35,25 @@ export const useFirebaseWhiteboard = () => {
   const [error, setError] = useState<string | null>(null);
   const { user, isAuthenticated } = useFirebaseAuth();
 
+  // Helper to recursively remove undefined fields from objects/arrays
+  function removeUndefined(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map(removeUndefined);
+    } else if (obj && typeof obj === 'object') {
+      const newObj: any = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          const value = obj[key];
+          if (value !== undefined) {
+            newObj[key] = removeUndefined(value);
+          }
+        }
+      }
+      return newObj;
+    }
+    return obj;
+  }
+
   // Save a whiteboard
   const saveWhiteboard = useCallback(async (
     title: string,
@@ -58,9 +77,20 @@ export const useFirebaseWhiteboard = () => {
     
     try {
       const now = Timestamp.now();
+      
+      // Clean the whiteboard data to remove undefined values
+      const cleanedData = {
+        textBoxes: removeUndefined(whiteboardData.textBoxes || []),
+        shapes: removeUndefined(whiteboardData.shapes || []),
+        images: removeUndefined(whiteboardData.images || []),
+        drawingPaths: removeUndefined(whiteboardData.drawingPaths || []),
+        arrows: removeUndefined(whiteboardData.arrows || []),
+        mindMapNodes: removeUndefined(whiteboardData.mindMapNodes || [])
+      };
+      
       const docRef = await addDoc(collection(db, 'whiteboards'), {
-        title,
-        ...whiteboardData,
+        title: title || 'Untitled Whiteboard',
+        ...cleanedData,
         userId: user.uid, // Use Firebase Auth UID
         userName: user.displayName || user.email || 'Anonymous',
         createdAt: now,
@@ -85,25 +115,6 @@ export const useFirebaseWhiteboard = () => {
   }, [user, isAuthenticated]);
 
   // Update an existing whiteboard
-  // Helper to recursively remove undefined fields from objects/arrays
-  function removeUndefined(obj: any): any {
-    if (Array.isArray(obj)) {
-      return obj.map(removeUndefined);
-    } else if (obj && typeof obj === 'object') {
-      const newObj: any = {};
-      for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          const value = obj[key];
-          if (value !== undefined) {
-            newObj[key] = removeUndefined(value);
-          }
-        }
-      }
-      return newObj;
-    }
-    return obj;
-  }
-
   const updateWhiteboard = useCallback(async (
     id: string,
     whiteboardData: {
