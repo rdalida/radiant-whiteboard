@@ -83,7 +83,7 @@ import AuthModal from './components/AuthModal';
 
 function App() {
   const { user, loading: authLoading, error: authError } = useFirebaseAuth();
-  const { updateWhiteboardTitle } = useFirebaseWhiteboard();
+  const { updateWhiteboardTitle, getAllWhiteboards } = useFirebaseWhiteboard();
   
   // Debug user state
   React.useEffect(() => {
@@ -866,6 +866,27 @@ function App() {
     }
     // For new whiteboards, the title will be used when auto-save creates the whiteboard
   };
+
+  // Load the most recently updated whiteboard when a user logs in
+  React.useEffect(() => {
+    const loadLastWhiteboard = async () => {
+      if (!user || currentWhiteboardId) return;
+      const boards = await getAllWhiteboards(user);
+      if (boards.length > 0) {
+        handleLoadWhiteboard(boards[0]);
+      } else {
+        handleNewWhiteboard();
+      }
+    };
+
+    if (!authLoading) {
+      if (user) {
+        loadLastWhiteboard();
+      } else {
+        handleNewWhiteboard();
+      }
+    }
+  }, [user, authLoading]);
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
